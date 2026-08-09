@@ -22,9 +22,13 @@ cp .env.local.example .env.local
 
 1. `supabase/migrations/0001_init.sql` — ✅ รันแล้ว
 2. `supabase/migrations/0002_storage.sql` — ✅ รันแล้ว
-3. `supabase/migrations/0003_seed.sql` — อาคาร/ห้องตัวอย่าง (แก้ชื่อเป็นของจริงก่อนเปิดใช้)
-4. `supabase/migrations/0004_status_cannot_proceed.sql` — สถานะ "ดำเนินการไม่ได้" (**รันแยก ห้ามรวมกับไฟล์อื่น**)
-5. `supabase/migrations/0005_service_types_and_fields.sql` — ประเภทงาน 5 แบบ + ความเร่งด่วน + ผู้รับผิดชอบ
+3. `supabase/migrations/0003_seed.sql` — ✅ รันแล้ว (อาคาร 4 / ห้อง 11 — แก้เป็นของจริงก่อนเปิดใช้)
+4. `supabase/migrations/0004_status_cannot_proceed.sql` — ✅ รันแล้ว
+5. `supabase/migrations/0005_service_types_and_fields.sql` — ✅ รันแล้ว (ประเภทงาน 5 แบบ)
+6. `supabase/migrations/0006_fix_rls_recursion.sql` — ✅ รันแล้ว (แก้ RLS recursion ด้วย `is_staff()`)
+
+> ตรวจแล้วด้วยข้อมูลจริง: REST คืน buildings 4 · rooms 11 · service_types 5,
+> ทดสอบส่งแจ้งซ่อม (อัปโหลดรูป 200 + insert 201) ผ่านสิทธิ์ anon สำเร็จ
 
 ## 3. สร้างบัญชีเจ้าหน้าที่คนแรก
 

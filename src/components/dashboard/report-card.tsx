@@ -4,8 +4,19 @@ import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import { Ban, CheckCircle2, Phone, RotateCcw, Undo2, UserRound } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -123,16 +134,47 @@ export function ReportCard({
                   <RotateCcw /> เริ่มซ่อม
                 </Button>
               )}
-              <Button size="sm" onClick={() => onStatusChange(report.id, "done")}>
-                <CheckCircle2 /> ซ่อมเสร็จแล้ว
-              </Button>
               <Button
                 size="sm"
-                variant="destructive"
-                onClick={() => onStatusChange(report.id, "cannot_proceed")}
+                onClick={() => {
+                  onStatusChange(report.id, "done");
+                  toast.success(`ปิดงาน ${report.buildingName} · ${report.roomName} เรียบร้อย`);
+                }}
               >
-                <Ban /> ดำเนินการไม่ได้
+                <CheckCircle2 /> ซ่อมเสร็จแล้ว
               </Button>
+              <Dialog>
+                <DialogTrigger render={<Button size="sm" variant="destructive" />}>
+                  <Ban /> ดำเนินการไม่ได้
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>ยืนยันปิดงานเป็น &quot;ดำเนินการไม่ได้&quot;?</DialogTitle>
+                    <DialogDescription>
+                      {report.buildingName} · {report.roomName} จะถูกย้ายไปฝั่งจบงาน
+                      โดยไม่นับเป็นงานที่ซ่อมสำเร็จ (เปิดงานกลับมาใหม่ได้ภายหลัง)
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose render={<Button variant="outline" />}>
+                      ยกเลิก
+                    </DialogClose>
+                    <DialogClose
+                      render={
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            onStatusChange(report.id, "cannot_proceed");
+                            toast.info("บันทึกสถานะ ดำเนินการไม่ได้ แล้ว");
+                          }}
+                        />
+                      }
+                    >
+                      ยืนยัน
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <Button
