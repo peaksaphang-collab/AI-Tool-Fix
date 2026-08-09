@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient, type ReportWithLocation } from "@/components/dashboard/dashboard-client";
+import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
 
 export default async function DashboardPage() {
+  if (!isSupabaseConfigured()) return <SetupRequired />;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,7 +35,7 @@ export default async function DashboardPage() {
   });
 
   return (
-    <main className="min-h-dvh px-4 py-8">
+    <main className="px-4 py-8">
       <h1 className="mb-6 text-2xl font-semibold">แดชบอร์ดแจ้งซ่อม</h1>
       <DashboardClient
         initialReports={reportsWithLocation}

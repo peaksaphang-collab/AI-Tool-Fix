@@ -15,6 +15,8 @@ const STATUS_LABEL: Record<ReportWithLocation["status"], string> = {
   done: "เสร็จแล้ว",
 };
 
+const OVERDUE_MS = 24 * 60 * 60 * 1000;
+
 export function ReportCard({
   report,
   onStatusChange,
@@ -23,6 +25,7 @@ export function ReportCard({
   onStatusChange: (id: string, status: ReportWithLocation["status"]) => void;
 }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +50,13 @@ export function ReportCard({
           <p className="truncate font-medium">
             {report.buildingName} · {report.roomName}
           </p>
-          <Badge variant="outline">{STATUS_LABEL[report.status]}</Badge>
+          <div className="flex shrink-0 gap-1">
+            {report.status !== "done" &&
+              now - new Date(report.created_at).getTime() > OVERDUE_MS && (
+                <Badge variant="destructive">ค้างนาน</Badge>
+              )}
+            <Badge variant="outline">{STATUS_LABEL[report.status]}</Badge>
+          </div>
         </div>
         {report.ai_equipment_type && (
           <p className="text-sm">

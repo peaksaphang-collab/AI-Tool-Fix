@@ -3,8 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { AnalyticsClient } from "@/components/analytics/analytics-client";
 import type { ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import type { TimelineEvent } from "@/components/analytics/timeline";
+import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
 
 export default async function AnalyticsPage() {
+  if (!isSupabaseConfigured()) return <SetupRequired />;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -57,7 +60,7 @@ export default async function AnalyticsPage() {
   });
 
   return (
-    <main className="min-h-dvh px-4 py-8">
+    <main className="px-4 py-8">
       <h1 className="mb-6 text-2xl font-semibold">แดชบอร์ดสรุปข้อมูล</h1>
       <AnalyticsClient reports={reportsWithLocation} timelineEvents={timelineEvents} />
     </main>

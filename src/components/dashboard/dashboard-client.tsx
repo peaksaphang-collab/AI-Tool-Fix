@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { updateReportStatus } from "@/app/dashboard/actions";
 import { ReportCard } from "@/components/dashboard/report-card";
@@ -53,7 +54,12 @@ export function DashboardClient({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "reports" },
         (payload) => {
-          setReports((current) => [enrich(payload.new as Report), ...current]);
+          const report = enrich(payload.new as Report);
+          setReports((current) => [report, ...current]);
+          // Client requirement: automatic alert when a new report arrives.
+          toast.warning(`มีแจ้งซ่อมใหม่: ${report.buildingName} · ${report.roomName}`, {
+            description: report.ai_equipment_type ?? undefined,
+          });
         }
       )
       .on(

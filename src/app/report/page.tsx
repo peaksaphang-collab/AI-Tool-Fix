@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { ReportForm } from "@/components/report/report-form";
+import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
 
 export default async function ReportPage() {
+  if (!isSupabaseConfigured()) return <SetupRequired />;
+
   const supabase = await createClient();
 
   const [{ data: buildings }, { data: rooms }] = await Promise.all([
