@@ -13,7 +13,10 @@
   }
   html, body { height: 100%; }
   body {
-    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", "Segoe UI", system-ui, sans-serif;
+    /* Thai-safe fallback chain: covers Windows (Leelawadee UI), macOS/iOS
+       (Thonburi), Android (Noto Sans Thai) so glyphs never break. */
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI",
+      "Thonburi", "Segoe UI", system-ui, sans-serif;
     background: var(--bg); color: var(--text); overflow: hidden;
   }
   .slide {
@@ -21,9 +24,9 @@
     flex-direction: column; justify-content: center; gap: 3vh;
   }
   .slide.active { display: flex; }
-  .kicker { color: var(--accent); font-size: 1rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-  h1 { font-size: 3.2rem; line-height: 1.15; }
-  h2 { font-size: 2.2rem; line-height: 1.2; }
+  .kicker { color: var(--accent); font-size: clamp(.8rem, 1.2vw, 1rem); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 3.2rem); line-height: 1.15; }
+  h2 { font-size: clamp(1.4rem, 3vw, 2.2rem); line-height: 1.2; }
   .sub { color: var(--muted); font-size: 1.15rem; max-width: 60ch; line-height: 1.7; }
   .grid { display: grid; gap: 1.2rem; }
   .cols2 { grid-template-columns: 1fr 1fr; }
@@ -53,11 +56,18 @@
   }
   .hint { color: var(--muted); }
   @media (max-width: 800px) {
-    h1 { font-size: 2.2rem; } h2 { font-size: 1.6rem; }
     .cols2, .cols3 { grid-template-columns: 1fr; }
     .flow { flex-direction: column; }
     .arrow { transform: rotate(90deg); align-self: center; }
     .slide { overflow-y: auto; justify-content: flex-start; padding-top: 8vh; }
+  }
+  /* Print / save-as-PDF: every slide becomes one page, colors preserved. */
+  @media print {
+    body { overflow: visible; background: var(--bg); }
+    .slide { display: flex !important; height: auto; min-height: 100vh;
+      page-break-after: always; break-after: page; }
+    .footer { display: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 </head>
@@ -181,7 +191,8 @@
   <table>
     <tr><th>ตาราง</th><th>เก็บอะไร</th><th>จุดเด่น</th></tr>
     <tr><td><code>buildings</code> / <code>rooms</code></td><td>อาคารและห้องทั้งหมด</td><td>เป็นตัวเลือกใน dropdown — ระบุตำแหน่งแม่นกว่า GPS</td></tr>
-    <tr><td><code>reports</code></td><td>รายการแจ้งซ่อม + ผล AI + สถานะ</td><td>อัปเดตแล้วกระจายเรียลไทม์ทุกหน้าจอ</td></tr>
+    <tr><td><code>service_types</code></td><td>ประเภทงานซ่อม 5 ประเภท</td><td>รหัสตรงกับระบบเดิม 1:1 — ย้ายข้อมูลเก่าได้ทันที</td></tr>
+    <tr><td><code>reports</code></td><td>แจ้งซ่อม + ผล AI + ความเร่งด่วน + ผู้รับผิดชอบ</td><td>อัปเดตแล้วกระจายเรียลไทม์ทุกหน้าจอ</td></tr>
     <tr><td><code>report_status_history</code></td><td>ประวัติการเปลี่ยนสถานะ</td><td>บันทึกอัตโนมัติด้วย trigger — ใช้ทำ Timeline</td></tr>
     <tr><td><code>staff</code></td><td>บัญชีเจ้าหน้าที่</td><td>ผูกกับระบบล็อกอิน Supabase Auth</td></tr>
   </table>
@@ -204,16 +215,68 @@
   <div class="card"><h3>ทำไมเลือกชุดนี้</h3><p>ทุกตัวมี free tier พอสำหรับโครงงาน · deploy ง่าย (Vercel กดเดียว) · เป็น stack ที่บริษัทจริงใช้กันแพร่หลาย — นำไปต่อยอดหรืออธิบายในการสอบได้เต็มปาก</p></div>
 </section>
 
-<!-- 11 · สรุป -->
+<!-- 11 · System Requirements -->
+<section class="slide">
+  <p class="kicker">System Requirements</p>
+  <h2>ความต้องการของระบบ — พัฒนาแล้ว 20/20 ข้อ</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>ผู้แจ้ง (FR-01–07)</h3>
+      <ul><li>ถ่ายรูป + เลือกอาคาร/ห้อง ไม่ต้องพิมพ์</li>
+      <li>AI ระบุอุปกรณ์ อาการ หมวดหมู่ ความเร่งด่วน</li>
+      <li>AI ล่มก็ยังแจ้งได้ (ไม่มีทางแจ้งไม่เข้า)</li></ul></div>
+    <div class="card"><h3>เจ้าหน้าที่ (FR-08–14)</h3>
+      <ul><li>สถานะ 4 แบบ รวม "ดำเนินการไม่ได้"</li>
+      <li>เรียลไทม์ + แจ้งเตือนอัตโนมัติ + ป้ายค้างนาน</li>
+      <li>มอบหมายผู้รับผิดชอบ, เรียงตามความเร่งด่วน</li></ul></div>
+    <div class="card"><h3>รายงาน (FR-15–20)</h3>
+      <ul><li>KPI · Kanban · Timeline · Heatmap · ปฏิทิน</li>
+      <li>สรุปรายวัน/เดือน/ปี เทียบช่วงก่อนหน้า</li>
+      <li>รายงานตามประเภทบริการ + รายคน (ตามระบบเดิม)</li></ul></div>
+  </div>
+  <p class="sub">Non-functional: responsive ทุกอุปกรณ์ · ฟอนต์ไทยไม่เพี้ยนทุก OS · RLS ทุกตาราง · เริ่มใช้ฟรี (free tier)</p>
+</section>
+
+<!-- 12 · Use Cases -->
+<section class="slide">
+  <p class="kicker">Use Cases</p>
+  <h2>8 Use Cases หลัก</h2>
+  <div class="grid cols2">
+    <div class="card"><h3>ผู้แจ้ง</h3>
+      <ul><li><b style="color:var(--text)">UC-01</b> แจ้งซ่อมด้วยรูปถ่าย (จบใน 30 วิ)</li>
+      <li><b style="color:var(--text)">UC-02</b> AI วิเคราะห์อัตโนมัติ: อุปกรณ์ → อาการ → หมวด 1 ใน 5 → ความเร่งด่วน 4 ระดับ</li></ul></div>
+    <div class="card"><h3>เจ้าหน้าที่</h3>
+      <ul><li><b style="color:var(--text)">UC-03</b> เข้าสู่ระบบ · <b style="color:var(--text)">UC-04</b> ติดตามเรียลไทม์</li>
+      <li><b style="color:var(--text)">UC-05</b> อัปเดตสถานะ (ปุ่ม/ลาก Kanban)</li>
+      <li><b style="color:var(--text)">UC-06</b> มอบหมายงาน · <b style="color:var(--text)">UC-07</b> ดูรายงาน</li>
+      <li><b style="color:var(--text)">UC-08</b> รับแจ้งเตือนอัตโนมัติ</li></ul></div>
+  </div>
+  <p class="sub">ทุก use case มี exception flow: ระบบต้องรับแจ้งได้เสมอแม้ AI หรือเครือข่ายมีปัญหา
+  — รายละเอียด flow เต็มอยู่ใน docs/USE-CASES.md</p>
+</section>
+
+<!-- 13 · UX/UI -->
+<section class="slide">
+  <p class="kicker">UX/UI Design</p>
+  <h2>ออกแบบจากคำถามเดียว: "ตัดอะไรออกได้อีก"</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>Mobile-first</h3><p>ปุ่มถ่ายรูปเปิดกล้องหลังทันที ฟอร์มเหลือ 3 จุดสัมผัส ทุกหน้า responsive ขนาดไม่เพี้ยนทุกจอ</p></div>
+    <div class="card"><h3>สีสื่อความหมายเดียว</h3><p>เหลือง=รอ น้ำเงิน=กำลังซ่อม เขียว=เสร็จ แดง=วิกฤต — ใช้เหมือนกันทุกหน้า พร้อมข้อความกำกับเสมอ (รองรับตาบอดสี)</p></div>
+    <div class="card"><h3>ฟอนต์ไทยทุกแพลตฟอร์ม</h3><p>IBM Plex Sans Thai + fallback ลึกถึงฟอนต์ระบบของ Windows/macOS/Android — ไม่มีสี่เหลี่ยมทุกกรณี</p></div>
+  </div>
+  <p class="sub">Component เดียวกันทั้งแอป (shadcn/ui) · ไม่มีของตกแต่งไร้หน้าที่ · ทุกอย่างที่กดได้ต้องเห็นผลทันที
+  — รายละเอียดอยู่ใน docs/UX-UI-DESIGN.md</p>
+</section>
+
+<!-- 14 · สรุป -->
 <section class="slide">
   <p class="kicker">Summary</p>
   <h2>สิ่งที่ระบบนี้ตอบโจทย์</h2>
   <div class="grid cols2">
     <div class="card"><h3>✅ ครบตามโจทย์</h3>
       <ul><li>ลดขั้นตอนกรอก — ถ่ายรูป + เลือกห้อง จบ</li>
-      <li>AI วิเคราะห์อุปกรณ์และอาการเสียอัตโนมัติ</li>
-      <li>สถานะ เสร็จ/ไม่เสร็จ เห็นในหน้าเดียว + เตือนอัตโนมัติ</li>
-      <li>Dashboard สรุปรายวัน/เดือน/ปี โดยไม่ใช้กราฟวงกลม/แท่ง</li></ul></div>
+      <li>AI วิเคราะห์อุปกรณ์ อาการ หมวดหมู่ 5 ประเภท + ความเร่งด่วน 4 ระดับ</li>
+      <li>สถานะ 4 แบบเห็นในหน้าเดียว + เตือนอัตโนมัติ + มอบหมายงานรายคน</li>
+      <li>Dashboard สรุปรายวัน/เดือน/ปี + รายงานตามประเภท/รายคน โดยไม่ใช้กราฟวงกลม/แท่ง</li></ul></div>
     <div class="card"><h3>🚀 ต่อยอดได้</h3>
       <ul><li>แจ้งเตือนผ่าน LINE / อีเมล</li>
       <li>มอบหมายงานให้ช่างรายคน</li>

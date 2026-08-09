@@ -23,6 +23,8 @@ cp .env.local.example .env.local
 1. `supabase/migrations/0001_init.sql` — ✅ รันแล้ว
 2. `supabase/migrations/0002_storage.sql` — ✅ รันแล้ว
 3. `supabase/migrations/0003_seed.sql` — อาคาร/ห้องตัวอย่าง (แก้ชื่อเป็นของจริงก่อนเปิดใช้)
+4. `supabase/migrations/0004_status_cannot_proceed.sql` — สถานะ "ดำเนินการไม่ได้" (**รันแยก ห้ามรวมกับไฟล์อื่น**)
+5. `supabase/migrations/0005_service_types_and_fields.sql` — ประเภทงาน 5 แบบ + ความเร่งด่วน + ผู้รับผิดชอบ
 
 ## 3. สร้างบัญชีเจ้าหน้าที่คนแรก
 
