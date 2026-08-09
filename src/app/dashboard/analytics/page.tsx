@@ -17,20 +17,30 @@ export default async function AnalyticsPage() {
     redirect("/login");
   }
 
-  const [{ data: reports }, { data: buildings }, { data: rooms }, { data: history }] =
-    await Promise.all([
-      supabase.from("reports").select("*").order("created_at", { ascending: false }),
-      supabase.from("buildings").select("*"),
-      supabase.from("rooms").select("*"),
-      supabase
-        .from("report_status_history")
-        .select("*")
-        .order("changed_at", { ascending: false })
-        .limit(50),
-    ]);
+  const [
+    { data: reports },
+    { data: buildings },
+    { data: rooms },
+    { data: history },
+    { data: serviceTypes },
+    { data: staff },
+  ] = await Promise.all([
+    supabase.from("reports").select("*").order("created_at", { ascending: false }),
+    supabase.from("buildings").select("*"),
+    supabase.from("rooms").select("*"),
+    supabase
+      .from("report_status_history")
+      .select("*")
+      .order("changed_at", { ascending: false })
+      .limit(50),
+    supabase.from("service_types").select("*").order("id"),
+    supabase.from("staff").select("*").order("full_name"),
+  ]);
 
   const buildingNameById = new Map((buildings ?? []).map((b) => [b.id, b.name]));
   const roomById = new Map((rooms ?? []).map((r) => [r.id, r]));
+  const serviceTypeById = new Map((serviceTypes ?? []).map((t) => [t.id, t.name]));
+  const staffById = new Map((staff ?? []).map((s) => [s.id, s.full_name]));
 
   const reportsWithLocation: ReportWithLocation[] = (reports ?? []).map((report) => {
     const room = roomById.get(report.room_id);
@@ -39,6 +49,12 @@ export default async function AnalyticsPage() {
       buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบอาคาร",
       roomName: room?.name ?? "ไม่ทราบห้อง",
       roomFloor: room?.floor ?? null,
+      serviceTypeName: report.service_type_id
+        ? serviceTypeById.get(report.service_type_id) ?? null
+        : null,
+      assignedName: report.assigned_to
+        ? staffById.get(report.assigned_to) ?? null
+        : null,
     };
   });
 

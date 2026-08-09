@@ -2,7 +2,9 @@
 // Once the project is linked, regenerate with:
 //   npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.ts
 
-export type ReportStatus = "pending" | "in_progress" | "done";
+export type ReportStatus = "pending" | "in_progress" | "done" | "cannot_proceed";
+
+export type Urgency = "critical" | "high" | "medium" | "low";
 
 export interface Database {
   public: {
@@ -51,6 +53,12 @@ export interface Database {
         Update: { id?: string; full_name?: string; created_at?: string };
         Relationships: [];
       };
+      service_types: {
+        Row: { id: number; name: string };
+        Insert: { id: number; name: string };
+        Update: { id?: number; name?: string };
+        Relationships: [];
+      };
       reports: {
         Row: {
           id: string;
@@ -62,6 +70,10 @@ export interface Database {
           ai_description: string | null;
           ai_confidence: number | null;
           status: ReportStatus;
+          service_type_id: number | null;
+          contact_phone: string | null;
+          assigned_to: string | null;
+          urgency: Urgency | null;
           created_at: string;
           updated_at: string;
           resolved_at: string | null;
@@ -77,6 +89,10 @@ export interface Database {
           ai_description?: string | null;
           ai_confidence?: number | null;
           status?: ReportStatus;
+          service_type_id?: number | null;
+          contact_phone?: string | null;
+          assigned_to?: string | null;
+          urgency?: Urgency | null;
           created_at?: string;
           updated_at?: string;
           resolved_at?: string | null;
@@ -92,6 +108,10 @@ export interface Database {
           ai_description?: string | null;
           ai_confidence?: number | null;
           status?: ReportStatus;
+          service_type_id?: number | null;
+          contact_phone?: string | null;
+          assigned_to?: string | null;
+          urgency?: Urgency | null;
           created_at?: string;
           updated_at?: string;
           resolved_at?: string | null;

@@ -5,12 +5,14 @@ export function KpiCards({
   pending,
   inProgress,
   done,
+  cannotProceed,
   avgResolutionHours,
 }: {
   total: number;
   pending: number;
   inProgress: number;
   done: number;
+  cannotProceed: number;
   avgResolutionHours: number | null;
 }) {
   const items = [
@@ -18,6 +20,7 @@ export function KpiCards({
     { label: "รอดำเนินการ", value: pending },
     { label: "กำลังซ่อม", value: inProgress },
     { label: "เสร็จแล้ว", value: done },
+    { label: "ดำเนินการไม่ได้", value: cannotProceed },
     {
       label: "เวลาซ่อมเฉลี่ย",
       value: avgResolutionHours === null ? "-" : `${avgResolutionHours.toFixed(1)} ชม.`,
@@ -25,7 +28,7 @@ export function KpiCards({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {items.map((item) => (
         <Card key={item.label}>
           <CardHeader className="pb-2">

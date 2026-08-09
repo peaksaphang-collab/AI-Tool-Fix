@@ -26,6 +26,28 @@ export async function updateReportStatus(reportId: string, status: ReportStatus)
   revalidatePath("/dashboard");
 }
 
+export async function assignReport(reportId: string, staffId: string | null) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { error } = await supabase
+    .from("reports")
+    .update({ assigned_to: staffId })
+    .eq("id", reportId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
+
 export async function getSignedPhotoUrl(photoPath: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.storage

@@ -22,6 +22,8 @@ export async function submitReport(
   const buildingId = formData.get("buildingId");
   const roomId = formData.get("roomId");
   const reporterName = formData.get("reporterName");
+  const contactPhone = formData.get("contactPhone");
+  const serviceTypeRaw = formData.get("serviceTypeId");
   const photo = formData.get("photo");
 
   if (typeof buildingId !== "string" || !buildingId) {
@@ -59,11 +61,22 @@ export async function submitReport(
   const base64 = Buffer.from(bytes).toString("base64");
   const analysis = await analyzePhoto(base64, mediaType);
 
+  // The reporter may pick a service type; otherwise the AI's classification
+  // fills it in ("แค่ถ่ายรูป AI วิเคราะห์ให้ทั้งหมด").
+  const pickedServiceType =
+    typeof serviceTypeRaw === "string" && /^[1-5]$/.test(serviceTypeRaw)
+      ? Number(serviceTypeRaw)
+      : null;
+
   const { error: insertError } = await supabase.from("reports").insert({
     building_id: buildingId,
     room_id: roomId,
     photo_path: photoPath,
     reporter_name: typeof reporterName === "string" && reporterName.trim() ? reporterName.trim() : null,
+    contact_phone:
+      typeof contactPhone === "string" && contactPhone.trim() ? contactPhone.trim() : null,
+    service_type_id: pickedServiceType ?? analysis?.serviceTypeId ?? null,
+    urgency: analysis?.urgency ?? null,
     ai_equipment_type: analysis?.equipmentType ?? null,
     ai_description: analysis?.description ?? null,
     ai_confidence: analysis?.confidence ?? null,

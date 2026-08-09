@@ -18,15 +18,18 @@ import type { Database } from "@/lib/supabase/types";
 
 type Building = Database["public"]["Tables"]["buildings"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
+type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
 
 const initialState: SubmitReportState = { status: "idle" };
 
 export function ReportForm({
   buildings,
   rooms,
+  serviceTypes,
 }: {
   buildings: Building[];
   rooms: Room[];
+  serviceTypes: ServiceType[];
 }) {
   const [state, formAction, pending] = useActionState(submitReport, initialState);
   const [buildingId, setBuildingId] = useState<string>("");
@@ -130,8 +133,36 @@ export function ReportForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
-        <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
+        <Label htmlFor="serviceTypeId">ประเภทงานซ่อม (ไม่บังคับ)</Label>
+        <Select name="serviceTypeId">
+          <SelectTrigger id="serviceTypeId" className="w-full">
+            <SelectValue placeholder="ไม่เลือกก็ได้ — AI วิเคราะห์ให้อัตโนมัติ" />
+          </SelectTrigger>
+          <SelectContent>
+            {serviceTypes.map((type) => (
+              <SelectItem key={type.id} value={String(type.id)}>
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
+          <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="contactPhone">เบอร์ติดต่อ (ไม่บังคับ)</Label>
+          <Input
+            id="contactPhone"
+            name="contactPhone"
+            type="tel"
+            inputMode="tel"
+            placeholder="เผื่อช่างติดต่อกลับ"
+          />
+        </div>
       </div>
 
       {state.status === "error" && (

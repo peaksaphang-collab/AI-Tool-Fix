@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { updateReportStatus } from "@/app/dashboard/actions";
+import { BreakdownList } from "@/components/analytics/breakdown-list";
 import { KpiCards } from "@/components/analytics/kpi-cards";
 import { PeriodSummary } from "@/components/analytics/period-summary";
 import { ProgressRing } from "@/components/analytics/progress-ring";
@@ -27,6 +28,33 @@ export function AnalyticsClient({
   const pending = items.filter((r) => r.status === "pending").length;
   const inProgress = items.filter((r) => r.status === "in_progress").length;
   const done = items.filter((r) => r.status === "done").length;
+  const cannotProceed = items.filter((r) => r.status === "cannot_proceed").length;
+
+  const byServiceType = Object.values(
+    items.reduce<Record<string, { label: string; total: number; done: number }>>(
+      (acc, r) => {
+        const label = r.serviceTypeName ?? "ยังไม่จัดประเภท";
+        acc[label] ??= { label, total: 0, done: 0 };
+        acc[label].total += 1;
+        if (r.status === "done") acc[label].done += 1;
+        return acc;
+      },
+      {}
+    )
+  ).sort((a, b) => b.total - a.total);
+
+  const byAssignee = Object.values(
+    items.reduce<Record<string, { label: string; total: number; done: number }>>(
+      (acc, r) => {
+        const label = r.assignedName ?? "ยังไม่มอบหมาย";
+        acc[label] ??= { label, total: 0, done: 0 };
+        acc[label].total += 1;
+        if (r.status === "done") acc[label].done += 1;
+        return acc;
+      },
+      {}
+    )
+  ).sort((a, b) => b.total - a.total);
 
   const resolutionHours = items
     .filter((r) => r.status === "done" && r.resolved_at)
@@ -55,6 +83,7 @@ export function AnalyticsClient({
           pending={pending}
           inProgress={inProgress}
           done={done}
+          cannotProceed={cannotProceed}
           avgResolutionHours={avgResolutionHours}
         />
         <ProgressRing
@@ -64,6 +93,11 @@ export function AnalyticsClient({
       </div>
 
       <PeriodSummary reports={items} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BreakdownList title="รายงานตามประเภทการให้บริการ" rows={byServiceType} />
+        <BreakdownList title="รายงานผลแต่ละคน (ผู้รับผิดชอบ)" rows={byAssignee} />
+      </div>
 
       <Tabs defaultValue="kanban">
         <TabsList>

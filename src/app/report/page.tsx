@@ -7,10 +7,12 @@ export default async function ReportPage() {
 
   const supabase = await createClient();
 
-  const [{ data: buildings }, { data: rooms }] = await Promise.all([
-    supabase.from("buildings").select("*").order("name"),
-    supabase.from("rooms").select("*").order("name"),
-  ]);
+  const [{ data: buildings }, { data: rooms }, { data: serviceTypes }] =
+    await Promise.all([
+      supabase.from("buildings").select("*").order("name"),
+      supabase.from("rooms").select("*").order("name"),
+      supabase.from("service_types").select("*").order("id"),
+    ]);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-10">
@@ -20,7 +22,11 @@ export default async function ReportPage() {
           ถ่ายรูปสิ่งที่เสีย เลือกอาคารและห้อง ระบบจะวิเคราะห์ให้อัตโนมัติ
         </p>
       </div>
-      <ReportForm buildings={buildings ?? []} rooms={rooms ?? []} />
+      <ReportForm
+        buildings={buildings ?? []}
+        rooms={rooms ?? []}
+        serviceTypes={serviceTypes ?? []}
+      />
     </main>
   );
 }

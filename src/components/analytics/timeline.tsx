@@ -2,10 +2,12 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 
+import type { ReportStatus } from "@/lib/supabase/types";
+
 export interface TimelineEvent {
   id: number;
   reportId: string;
-  status: "pending" | "in_progress" | "done";
+  status: ReportStatus;
   changedAt: string;
   buildingName: string;
   roomName: string;
@@ -15,12 +17,14 @@ const STATUS_LABEL: Record<TimelineEvent["status"], string> = {
   pending: "แจ้งใหม่",
   in_progress: "เริ่มซ่อม",
   done: "ซ่อมเสร็จ",
+  cannot_proceed: "ดำเนินการไม่ได้",
 };
 
 const STATUS_COLOR: Record<TimelineEvent["status"], string> = {
   pending: "bg-amber-500",
   in_progress: "bg-blue-500",
   done: "bg-emerald-500",
+  cannot_proceed: "bg-red-500",
 };
 
 export function Timeline({ events }: { events: TimelineEvent[] }) {

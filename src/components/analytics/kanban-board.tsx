@@ -17,6 +17,7 @@ const COLUMNS: { status: ReportStatus; label: string }[] = [
   { status: "pending", label: "รอดำเนินการ" },
   { status: "in_progress", label: "กำลังซ่อม" },
   { status: "done", label: "เสร็จแล้ว" },
+  { status: "cannot_proceed", label: "ดำเนินการไม่ได้" },
 ];
 
 function KanbanCard({ report }: { report: ReportWithLocation }) {
@@ -96,7 +97,7 @@ export function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         {COLUMNS.map((column) => (
           <KanbanColumn
             key={column.status}
