@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบแจ้งซ่อม — สไลด์นำเสนอ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f172a; --card: #1e293b; --line: #334155;
+    --text: #f1f5f9; --muted: #94a3b8;
+    --accent: #34d399; --accent2: #60a5fa; --warn: #fbbf24;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden;
+  }
+  .slide {
+    display: none; height: 100vh; padding: 6vh 8vw;
+    flex-direction: column; justify-content: center; gap: 3vh;
+  }
+  .slide.active { display: flex; }
+  .kicker { color: var(--accent); font-size: 1rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-size: 3.2rem; line-height: 1.15; }
+  h2 { font-size: 2.2rem; line-height: 1.2; }
+  .sub { color: var(--muted); font-size: 1.15rem; max-width: 60ch; line-height: 1.7; }
+  .grid { display: grid; gap: 1.2rem; }
+  .cols2 { grid-template-columns: 1fr 1fr; }
+  .cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 1.3rem 1.5rem;
+  }
+  .card h3 { font-size: 1.15rem; margin-bottom: .5rem; }
+  .card p, .card li { color: var(--muted); font-size: 1rem; line-height: 1.65; }
+  .card ul { padding-left: 1.2rem; }
+  .tag { display: inline-block; background: rgba(52,211,153,.12); color: var(--accent);
+    border-radius: 999px; padding: .15rem .8rem; font-size: .85rem; margin: .15rem .2rem .15rem 0; }
+  .flow { display: flex; align-items: stretch; gap: .8rem; }
+  .flow .card { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+  .arrow { align-self: center; color: var(--accent); font-size: 1.8rem; flex: 0 0 auto; }
+  .num { color: var(--accent); font-weight: 700; font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid var(--line); padding: .55rem .9rem; text-align: left; font-size: .95rem; }
+  th { background: var(--card); }
+  td { color: var(--muted); }
+  code { background: rgba(96,165,250,.12); color: var(--accent2); border-radius: 6px; padding: .1rem .45rem; font-size: .9em; }
+  .footer {
+    position: fixed; bottom: 1.2rem; left: 0; right: 0;
+    display: flex; justify-content: space-between; padding: 0 2rem;
+    color: var(--muted); font-size: .85rem;
+  }
+  .hint { color: var(--muted); }
+  @media (max-width: 800px) {
+    h1 { font-size: 2.2rem; } h2 { font-size: 1.6rem; }
+    .cols2, .cols3 { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .arrow { transform: rotate(90deg); align-self: center; }
+    .slide { overflow-y: auto; justify-content: flex-start; padding-top: 8vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1 · Title -->
+<section class="slide active">
+  <p class="kicker">Presentation · โครงงานนักศึกษา</p>
+  <h1>ระบบแจ้งซ่อมอัจฉริยะ<br>ถ่ายรูปเดียว AI วิเคราะห์ให้</h1>
+  <p class="sub">อัปเกรดระบบแจ้งซ่อม (IT Helpdesk) เดิม ให้ทันสมัย ใช้งานง่าย
+  ลดขั้นตอนการกรอกข้อมูล และเห็นสถานะการซ่อมแบบเรียลไทม์ในหน้าจอเดียว</p>
+  <div>
+    <span class="tag">Next.js 16</span><span class="tag">Supabase</span>
+    <span class="tag">Claude Vision AI</span><span class="tag">Realtime</span>
+  </div>
+</section>
+
+<!-- 2 · ปัญหาระบบเดิม -->
+<section class="slide">
+  <p class="kicker">Pain Points</p>
+  <h2>ปัญหาของระบบเดิม</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>📝 กรอกเยอะ</h3><p>ผู้แจ้งต้องพิมพ์อธิบายอาการเสียเอง ทั้งที่บางครั้งไม่รู้ว่าอุปกรณ์ชื่ออะไร ทำให้แจ้งช้าและข้อมูลไม่ครบ</p></div>
+    <div class="card"><h3>❓ ไม่รู้สถานะ</h3><p>แจ้งไปแล้วเงียบ — ผู้แจ้งไม่รู้ว่าซ่อมเสร็จหรือยัง ช่างเปิดมาก็ไม่เห็นภาพรวมว่าเหลืองานอะไร</p></div>
+    <div class="card"><h3>📊 ดูข้อมูลยาก</h3><p>รายงานเป็นกราฟวงกลม/แท่งแบบเดิม ต้องกดดูทีละหน้า ไม่มีสรุปภาพรวมที่เข้าใจได้ในหน้าเดียว</p></div>
+  </div>
+</section>
+
+<!-- 3 · แนวคิด -->
+<section class="slide">
+  <p class="kicker">Design Concept</p>
+  <h2>แนวคิด: Less is More</h2>
+  <div class="grid cols2">
+    <div class="card"><h3>ผู้แจ้ง — ทำแค่ 3 อย่าง</h3>
+      <ul><li>ถ่ายรูปสิ่งที่เสีย 1 รูป</li><li>เลือกอาคาร + ห้อง จากตัวเลือก (ไม่ต้องพิมพ์)</li><li>กดส่ง — จบ ที่เหลือ AI จัดการ</li></ul></div>
+    <div class="card"><h3>เจ้าหน้าที่ — เห็นทุกอย่างในหน้าเดียว</h3>
+      <ul><li>บอร์ดแบ่ง 2 ฝั่ง: ยังไม่เสร็จ / เสร็จแล้ว</li><li>เคสใหม่เด้งเตือนอัตโนมัติทันที</li><li>Dashboard สรุปรายวัน · รายเดือน · รายปี</li></ul></div>
+  </div>
+</section>
+
+<!-- 4 · Input Process Output -->
+<section class="slide">
+  <p class="kicker">System Overview</p>
+  <h2>Input → Process → Output</h2>
+  <div class="flow">
+    <div class="card"><h3>📥 Input</h3><p>รูปถ่ายอุปกรณ์ที่เสีย<br>+ อาคาร / ห้อง<br>+ ชื่อผู้แจ้ง (ไม่บังคับ)</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><h3>⚙️ Process</h3><p>AI วิเคราะห์รูป → ระบุอุปกรณ์และอาการเสีย<br>บันทึกลงฐานข้อมูล → กระจายแบบเรียลไทม์</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><h3>📤 Output</h3><p>บอร์ดสถานะเรียลไทม์<br>การแจ้งเตือนอัตโนมัติ<br>Dashboard สรุปทุกช่วงเวลา</p></div>
+  </div>
+</section>
+
+<!-- 5 · Flow ผู้แจ้ง -->
+<section class="slide">
+  <p class="kicker">User Flow · ผู้แจ้งซ่อม</p>
+  <h2>แจ้งซ่อมจบใน 30 วินาที</h2>
+  <div class="flow">
+    <div class="card"><p class="num">1</p><p>เปิดหน้า /report<br>(มือถือหรือคอมก็ได้)</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><p class="num">2</p><p>ถ่ายรูปสิ่งที่เสีย<br>กล้องเปิดอัตโนมัติ</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><p class="num">3</p><p>เลือกอาคาร → ห้อง<br>จาก dropdown</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><p class="num">4</p><p>กดส่ง ✓<br>AI วิเคราะห์ให้เอง</p></div>
+  </div>
+  <p class="sub">ไม่ต้องพิมพ์อธิบายอาการ ไม่ต้องรู้ชื่ออุปกรณ์ — ระบบวิเคราะห์จากรูปให้อัตโนมัติ</p>
+</section>
+
+<!-- 6 · AI -->
+<section class="slide">
+  <p class="kicker">AI Logic</p>
+  <h2>AI วิเคราะห์รูปอย่างไร</h2>
+  <div class="grid cols2">
+    <div class="card"><h3>ขั้นตอน</h3>
+      <ul>
+        <li>รูปถูกส่งไปยัง <code>Claude Vision API</code> ฝั่งเซิร์ฟเวอร์ (key ไม่หลุดถึงเบราว์เซอร์)</li>
+        <li>AI ตอบกลับผ่านโครงสร้างบังคับ (tool schema): <code>อุปกรณ์</code> · <code>อาการเสีย</code> · <code>ความมั่นใจ 0–1</code></li>
+        <li>ผลวิเคราะห์บันทึกคู่กับรายการแจ้งซ่อมทันที</li>
+      </ul></div>
+    <div class="card"><h3>ตัวอย่างผลลัพธ์</h3>
+      <p>รูปแอร์มีน้ำหยด →</p>
+      <ul>
+        <li>อุปกรณ์: <b style="color:var(--text)">เครื่องปรับอากาศ</b></li>
+        <li>อาการ: มีน้ำรั่วซึมบริเวณหน้ากากแอร์</li>
+        <li>ความมั่นใจ: 0.92</li>
+      </ul>
+      <p style="margin-top:.6rem">ถ้า AI วิเคราะห์ไม่ได้ ระบบยังรับแจ้งตามปกติ — เจ้าหน้าที่ระบุเองภายหลัง (ไม่มีทางแจ้งไม่เข้า)</p></div>
+  </div>
+</section>
+
+<!-- 7 · ฝั่งเจ้าหน้าที่ -->
+<section class="slide">
+  <p class="kicker">Staff View</p>
+  <h2>บอร์ดสถานะเรียลไทม์ + แจ้งเตือนอัตโนมัติ</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>🔀 แบ่ง 2 ฝั่งชัดเจน</h3><p>"ยังไม่เสร็จ" กับ "เสร็จแล้ว" อยู่หน้าเดียวกัน ไม่ต้องเลื่อนกดดูทีละรายการ</p></div>
+    <div class="card"><h3>🔔 เตือนทันที</h3><p>เคสใหม่เด้งแจ้งเตือนบนจอทุกเครื่องที่เปิดอยู่ งานค้างเกิน 24 ชม. ขึ้นป้าย "ค้างนาน" สีแดง</p></div>
+    <div class="card"><h3>👥 ใช้พร้อมกันได้</h3><p>เจ้าหน้าที่หลายคนเปิดพร้อมกัน — คนหนึ่งกด "ซ่อมเสร็จ" ทุกจออัปเดตทันทีผ่าน Supabase Realtime</p></div>
+  </div>
+</section>
+
+<!-- 8 · Dashboard -->
+<section class="slide">
+  <p class="kicker">Analytics</p>
+  <h2>Dashboard สรุป — ไม่ใช้กราฟวงกลม/แท่งแบบเดิม</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>KPI Cards</h3><p>ตัวเลขรวม รอซ่อม กำลังซ่อม เสร็จแล้ว เวลาซ่อมเฉลี่ย</p></div>
+    <div class="card"><h3>Kanban Board</h3><p>ลากการ์ดเปลี่ยนสถานะได้จริง แทน flow chart แบบภาพนิ่ง</p></div>
+    <div class="card"><h3>Progress Ring</h3><p>วงแหวนอัตราซ่อมเสร็จ เห็นภาพรวมในแวบเดียว</p></div>
+    <div class="card"><h3>Timeline</h3><p>เส้นเวลาไล่เหตุการณ์ แจ้งใหม่ → เริ่มซ่อม → เสร็จ</p></div>
+    <div class="card"><h3>Heatmap + ปฏิทิน</h3><p>ช่วงเวลา/วันไหนแจ้งเยอะ เห็นเป็นความเข้มสี</p></div>
+    <div class="card"><h3>สรุปรายวัน/เดือน/ปี</h3><p>สลับช่วงเวลาได้ พร้อมเทียบกับช่วงก่อนหน้า</p></div>
+  </div>
+</section>
+
+<!-- 9 · Database -->
+<section class="slide">
+  <p class="kicker">Database Design</p>
+  <h2>โครงสร้างฐานข้อมูล (PostgreSQL)</h2>
+  <table>
+    <tr><th>ตาราง</th><th>เก็บอะไร</th><th>จุดเด่น</th></tr>
+    <tr><td><code>buildings</code> / <code>rooms</code></td><td>อาคารและห้องทั้งหมด</td><td>เป็นตัวเลือกใน dropdown — ระบุตำแหน่งแม่นกว่า GPS</td></tr>
+    <tr><td><code>reports</code></td><td>รายการแจ้งซ่อม + ผล AI + สถานะ</td><td>อัปเดตแล้วกระจายเรียลไทม์ทุกหน้าจอ</td></tr>
+    <tr><td><code>report_status_history</code></td><td>ประวัติการเปลี่ยนสถานะ</td><td>บันทึกอัตโนมัติด้วย trigger — ใช้ทำ Timeline</td></tr>
+    <tr><td><code>staff</code></td><td>บัญชีเจ้าหน้าที่</td><td>ผูกกับระบบล็อกอิน Supabase Auth</td></tr>
+  </table>
+  <p class="sub">ความปลอดภัย: Row Level Security ทุกตาราง — คนทั่วไป "ส่งแจ้งซ่อมได้แต่อ่านข้อมูลไม่ได้"
+  เฉพาะเจ้าหน้าที่ที่ล็อกอินเท่านั้นที่เห็นข้อมูลทั้งหมด รูปเก็บใน private bucket เปิดดูผ่านลิงก์ชั่วคราวเท่านั้น</p>
+</section>
+
+<!-- 10 · Tech Stack -->
+<section class="slide">
+  <p class="kicker">Technology</p>
+  <h2>โปรแกรมและเทคโนโลยีที่ใช้</h2>
+  <div class="grid cols2">
+    <div class="card"><h3>Frontend + Backend</h3>
+      <ul><li><b style="color:var(--text)">Next.js 16</b> — เว็บเฟรมเวิร์กตัวเดียวจบทั้งหน้าเว็บและ API (Server Actions)</li>
+      <li><b style="color:var(--text)">Tailwind CSS + shadcn/ui</b> — ดีไซน์คลีน ทันสมัย responsive ทุกจอ</li></ul></div>
+    <div class="card"><h3>ฐานข้อมูล + AI</h3>
+      <ul><li><b style="color:var(--text)">Supabase</b> — PostgreSQL + ล็อกอิน + เก็บรูป + Realtime ในบริการเดียว (เริ่มได้ฟรี)</li>
+      <li><b style="color:var(--text)">Claude Vision API</b> — วิเคราะห์รูปภาพว่าอุปกรณ์อะไรเสีย</li></ul></div>
+  </div>
+  <div class="card"><h3>ทำไมเลือกชุดนี้</h3><p>ทุกตัวมี free tier พอสำหรับโครงงาน · deploy ง่าย (Vercel กดเดียว) · เป็น stack ที่บริษัทจริงใช้กันแพร่หลาย — นำไปต่อยอดหรืออธิบายในการสอบได้เต็มปาก</p></div>
+</section>
+
+<!-- 11 · สรุป -->
+<section class="slide">
+  <p class="kicker">Summary</p>
+  <h2>สิ่งที่ระบบนี้ตอบโจทย์</h2>
+  <div class="grid cols2">
+    <div class="card"><h3>✅ ครบตามโจทย์</h3>
+      <ul><li>ลดขั้นตอนกรอก — ถ่ายรูป + เลือกห้อง จบ</li>
+      <li>AI วิเคราะห์อุปกรณ์และอาการเสียอัตโนมัติ</li>
+      <li>สถานะ เสร็จ/ไม่เสร็จ เห็นในหน้าเดียว + เตือนอัตโนมัติ</li>
+      <li>Dashboard สรุปรายวัน/เดือน/ปี โดยไม่ใช้กราฟวงกลม/แท่ง</li></ul></div>
+    <div class="card"><h3>🚀 ต่อยอดได้</h3>
+      <ul><li>แจ้งเตือนผ่าน LINE / อีเมล</li>
+      <li>มอบหมายงานให้ช่างรายคน</li>
+      <li>สแกน QR ประจำห้องเพื่อแจ้งซ่อมเร็วขึ้น</li>
+      <li>รายงาน PDF อัตโนมัติรายเดือน</li></ul></div>
+  </div>
+</section>
+
+<div class="footer">
+  <span class="hint">← → เปลี่ยนสไลด์ · คลิกครึ่งซ้าย/ขวาของจอได้</span>
+  <span id="counter"></span>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const counter = document.getElementById("counter");
+  let i = 0;
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+    counter.textContent = (i + 1) + " / " + slides.length;
+  }
+  document.addEventListener("keydown", (e) => {
+    if (["ArrowRight", " ", "PageDown"].includes(e.key)) show(i + 1);
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+  });
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("a")) return;
+    show(e.clientX > innerWidth / 2 ? i + 1 : i - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>

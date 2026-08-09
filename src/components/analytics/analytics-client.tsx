@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { updateReportStatus } from "@/app/dashboard/actions";
 import { KpiCards } from "@/components/analytics/kpi-cards";
+import { PeriodSummary } from "@/components/analytics/period-summary";
 import { ProgressRing } from "@/components/analytics/progress-ring";
 import { KanbanBoard } from "@/components/analytics/kanban-board";
 import { Timeline, type TimelineEvent } from "@/components/analytics/timeline";
@@ -61,6 +62,8 @@ export function AnalyticsClient({
           label="อัตราซ่อมเสร็จ"
         />
       </div>
+
+      <PeriodSummary reports={items} />
 
       <Tabs defaultValue="kanban">
         <TabsList>
