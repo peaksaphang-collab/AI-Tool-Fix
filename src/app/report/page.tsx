@@ -18,7 +18,7 @@ export default async function ReportPage() {
   return (
     <>
       <SiteHeader backHref="/" />
-      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8 sm:py-10">
         <div>
           <h1 className="text-2xl font-semibold">แจ้งซ่อม</h1>
           <p className="text-sm text-muted-foreground">
