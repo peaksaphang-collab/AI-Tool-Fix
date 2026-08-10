@@ -10,8 +10,19 @@ const plexSansThai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "ระบบแจ้งซ่อม",
+  metadataBase: new URL("https://ai-tool-fix.vercel.app"),
+  title: "ระบบแจ้งซ่อม | Repair Notify System",
   description: "แจ้งซ่อมอุปกรณ์ด้วยรูปถ่าย ให้ AI วิเคราะห์ และติดตามสถานะแบบเรียลไทม์",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png" }],
+  },
+  openGraph: {
+    title: "ระบบแจ้งซ่อม | Repair Notify System",
+    description: "แจ้งซ่อมอุปกรณ์ด้วยรูปถ่าย ให้ AI วิเคราะห์ และติดตามสถานะแบบเรียลไทม์",
+    images: [{ url: "/logo.png", width: 667, height: 593 }],
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
