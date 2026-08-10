@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
-import { Ban, CheckCircle2, Phone, RotateCcw, Undo2, UserRound } from "lucide-react";
+import {
+  Ban,
+  CheckCircle2,
+  ImageOff,
+  Phone,
+  RotateCcw,
+  Undo2,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,6 +73,7 @@ export function ReportCard({
   onAssign: (id: string, staffId: string | null) => void;
 }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBroken, setPhotoBroken] = useState(false);
   const [now] = useState(() => Date.now());
 
   useEffect(() => {
@@ -78,27 +87,71 @@ export function ReportCard({
   }, [report.photo_path]);
 
   const isOpen = report.status === "pending" || report.status === "in_progress";
+  const createdAt = new Date(report.created_at);
+  const exactTime = format(createdAt, "d MMM yyyy HH:mm น.", { locale: th });
+  const showPhoto = Boolean(photoUrl) && !photoBroken;
 
   return (
-    <div className="flex gap-3 rounded-lg border bg-card p-3">
-      <div className="size-20 shrink-0 overflow-hidden rounded-md bg-muted">
-        {photoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoUrl} alt="รูปที่แจ้งซ่อม" className="size-full object-cover" />
-        )}
-      </div>
+    <div className="flex gap-3 rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
+      {/* รูป: กดเพื่อดูขนาดเต็ม / มี fallback เมื่อรูปเสียหรือยังโหลดไม่เสร็จ */}
+      <Dialog>
+        <DialogTrigger
+          render={
+            <button
+              type="button"
+              disabled={!showPhoto}
+              aria-label={showPhoto ? "ดูรูปขนาดเต็ม" : "ไม่มีรูป"}
+              className="size-20 shrink-0 overflow-hidden rounded-md border bg-muted disabled:cursor-default sm:size-24"
+            />
+          }
+        >
+          {showPhoto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl!}
+              alt="รูปที่แจ้งซ่อม"
+              onError={() => setPhotoBroken(true)}
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground">
+              <ImageOff className="size-5" />
+              <span className="text-[10px] leading-tight">
+                {photoUrl ? "รูปเสียหาย" : "กำลังโหลด"}
+              </span>
+            </span>
+          )}
+        </DialogTrigger>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {report.buildingName} · {report.roomName}
+            </DialogTitle>
+            <DialogDescription>แจ้งเมื่อ {exactTime}</DialogDescription>
+          </DialogHeader>
+          {showPhoto && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl!}
+              alt="รูปที่แจ้งซ่อม"
+              className="max-h-[70vh] w-full rounded-md object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate font-medium">
+        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+          <p className="min-w-0 flex-1 truncate font-medium">
             {report.buildingName} · {report.roomName}
           </p>
-          <div className="flex shrink-0 gap-1">
+          <div className="flex shrink-0 flex-wrap gap-1">
             {report.urgency && (
               <Badge className={URGENCY_CLASS[report.urgency]}>
                 {URGENCY_LABEL[report.urgency]}
               </Badge>
             )}
-            {isOpen && now - new Date(report.created_at).getTime() > OVERDUE_MS && (
+            {isOpen && now - createdAt.getTime() > OVERDUE_MS && (
               <Badge variant="destructive">ค้างนาน</Badge>
             )}
             <Badge variant="outline">{STATUS_LABEL[report.status]}</Badge>
@@ -114,12 +167,18 @@ export function ReportCard({
           <p className="text-xs text-muted-foreground">{report.serviceTypeName}</p>
         )}
         <p className="text-xs text-muted-foreground">
-          แจ้งเมื่อ {formatDistanceToNow(new Date(report.created_at), { addSuffix: true, locale: th })}
+          <span title={exactTime}>
+            แจ้งเมื่อ{" "}
+            {formatDistanceToNow(createdAt, { addSuffix: true, locale: th })}
+          </span>
           {report.reporter_name ? ` · โดย ${report.reporter_name}` : ""}
           {report.contact_phone ? (
-            <span className="ml-1 inline-flex items-center gap-0.5">
+            <a
+              href={`tel:${report.contact_phone.replace(/[^0-9+]/g, "")}`}
+              className="ml-1 inline-flex items-center gap-0.5 font-medium text-primary underline-offset-2 hover:underline"
+            >
               <Phone className="size-3" /> {report.contact_phone}
-            </span>
+            </a>
           ) : null}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -138,7 +197,9 @@ export function ReportCard({
                 size="sm"
                 onClick={() => {
                   onStatusChange(report.id, "done");
-                  toast.success(`ปิดงาน ${report.buildingName} · ${report.roomName} เรียบร้อย`);
+                  toast.success(
+                    `ปิดงาน ${report.buildingName} · ${report.roomName} เรียบร้อย`
+                  );
                 }}
               >
                 <CheckCircle2 /> ซ่อมเสร็จแล้ว
@@ -149,7 +210,9 @@ export function ReportCard({
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>ยืนยันปิดงานเป็น &quot;ดำเนินการไม่ได้&quot;?</DialogTitle>
+                    <DialogTitle>
+                      ยืนยันปิดงานเป็น &quot;ดำเนินการไม่ได้&quot;?
+                    </DialogTitle>
                     <DialogDescription>
                       {report.buildingName} · {report.roomName} จะถูกย้ายไปฝั่งจบงาน
                       โดยไม่นับเป็นงานที่ซ่อมสำเร็จ (เปิดงานกลับมาใหม่ได้ภายหลัง)
@@ -194,7 +257,7 @@ export function ReportCard({
               }
             >
               <SelectTrigger size="sm" className="h-7 min-w-32 text-xs">
-                <SelectValue placeholder="ผู้รับผิดชอบ" />
+                <SelectValue>{report.assignedName ?? "ยังไม่มอบหมาย"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">ยังไม่มอบหมาย</SelectItem>

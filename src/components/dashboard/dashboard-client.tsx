@@ -49,6 +49,7 @@ export function DashboardClient({
   staff: Staff[];
 }) {
   const [reports, setReports] = useState(initialReports);
+  const [query, setQuery] = useState("");
   const [, startTransition] = useTransition();
 
   const buildingNameById = useMemo(
@@ -148,15 +149,51 @@ export function DashboardClient({
 
   // Two sides per the client requirement: open work vs. closed work.
   // "cannot_proceed" is closed-but-not-fixed, shown with its own badge.
-  const open = reports
+  const q = query.trim().toLowerCase();
+  const visible = q
+    ? reports.filter((r) =>
+        [
+          r.buildingName,
+          r.roomName,
+          r.serviceTypeName,
+          r.ai_equipment_type,
+          r.ai_description,
+          r.reporter_name,
+          r.contact_phone,
+          r.assignedName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      )
+    : reports;
+
+  const open = visible
     .filter((r) => r.status === "pending" || r.status === "in_progress")
     .sort(byUrgencyThenNewest);
-  const closed = reports.filter(
+  const closed = visible.filter(
     (r) => r.status === "done" || r.status === "cannot_proceed"
   );
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <>
+      <div className="mb-4">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ค้นหา อาคาร / ห้อง / อุปกรณ์ / ผู้แจ้ง / เบอร์โทร"
+          aria-label="ค้นหารายการแจ้งซ่อม"
+          className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:max-w-md"
+        />
+        {q && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            พบ {visible.length} รายการจากทั้งหมด {reports.length}
+          </p>
+        )}
+      </div>
+      <div className="grid gap-6 md:grid-cols-2">
       <section className="flex flex-col gap-3">
         <h2 className="font-medium text-amber-600">ยังไม่เสร็จ ({open.length})</h2>
         <div className="flex flex-col gap-2">
@@ -191,6 +228,7 @@ export function DashboardClient({
           )}
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
