@@ -202,6 +202,7 @@ export function DashboardClient({
               key={report.id}
               report={report}
               staff={staff}
+              serviceTypes={serviceTypes}
               onStatusChange={handleStatusChange}
               onAssign={handleAssign}
             />
@@ -219,6 +220,7 @@ export function DashboardClient({
               key={report.id}
               report={report}
               staff={staff}
+              serviceTypes={serviceTypes}
               onStatusChange={handleStatusChange}
               onAssign={handleAssign}
             />

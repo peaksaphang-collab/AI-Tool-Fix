@@ -33,10 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSignedPhotoUrl } from "@/app/dashboard/actions";
+import { EditDetailsDialog } from "@/components/dashboard/edit-details-dialog";
 import type { ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import type { Database, Urgency } from "@/lib/supabase/types";
 
 type Staff = Database["public"]["Tables"]["staff"]["Row"];
+type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
 
 const STATUS_LABEL: Record<ReportWithLocation["status"], string> = {
   pending: "รอดำเนินการ",
@@ -64,11 +66,13 @@ const OVERDUE_MS = 24 * 60 * 60 * 1000;
 export function ReportCard({
   report,
   staff,
+  serviceTypes,
   onStatusChange,
   onAssign,
 }: {
   report: ReportWithLocation;
   staff: Staff[];
+  serviceTypes: ServiceType[];
   onStatusChange: (id: string, status: ReportWithLocation["status"]) => void;
   onAssign: (id: string, staffId: string | null) => void;
 }) {
@@ -248,6 +252,14 @@ export function ReportCard({
               <Undo2 /> เปิดงานใหม่
             </Button>
           )}
+          <EditDetailsDialog
+            reportId={report.id}
+            title={`${report.buildingName} · ${report.roomName}`}
+            serviceTypes={serviceTypes}
+            currentServiceTypeId={report.service_type_id}
+            currentUrgency={report.urgency}
+            currentEquipment={report.ai_equipment_type}
+          />
           <div className="ml-auto flex items-center gap-1">
             <UserRound className="size-3.5 text-muted-foreground" />
             <Select
