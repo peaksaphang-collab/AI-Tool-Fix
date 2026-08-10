@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { submitReport, type SubmitReportState } from "@/app/report/actions";
+import { DuplicateNotice } from "@/components/report/duplicate-notice";
 import type { Database } from "@/lib/supabase/types";
 
 type Building = Database["public"]["Tables"]["buildings"]["Row"];
@@ -33,6 +34,7 @@ export function ReportForm({
 }) {
   const [state, formAction, pending] = useActionState(submitReport, initialState);
   const [buildingId, setBuildingId] = useState<string>("");
+  const [roomId, setRoomId] = useState<string>("");
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -142,7 +144,10 @@ export function ReportForm({
         <Select
           name="buildingId"
           value={buildingId}
-          onValueChange={(value) => setBuildingId(value ?? "")}
+          onValueChange={(value) => {
+            setBuildingId(value ?? "");
+            setRoomId("");
+          }}
           required
         >
           <SelectTrigger id="buildingId" className="w-full">
@@ -160,7 +165,13 @@ export function ReportForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="roomId">ห้อง</Label>
-        <Select name="roomId" disabled={!buildingId} required>
+        <Select
+          name="roomId"
+          value={roomId}
+          onValueChange={(value) => setRoomId(value ?? "")}
+          disabled={!buildingId}
+          required
+        >
           <SelectTrigger id="roomId" className="w-full">
             <SelectValue placeholder={buildingId ? "เลือกห้อง" : "เลือกอาคารก่อน"} />
           </SelectTrigger>
@@ -173,6 +184,7 @@ export function ReportForm({
             ))}
           </SelectContent>
         </Select>
+        <DuplicateNotice roomId={roomId} />
       </div>
 
       <div className="flex flex-col gap-2">

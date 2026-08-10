@@ -122,3 +122,19 @@ export async function submitReport(
     trackingCode,
   };
 }
+
+// เตือนแจ้งซ้ำ — นับใบที่ยังค้างในห้องเดียวกัน (ตัวเลขล้วน ไม่คืนข้อมูลใคร)
+export async function openCountForRoom(roomId: string): Promise<number> {
+  if (!roomId) return 0;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("public_open_count_for_room", {
+      room: roomId,
+    });
+    if (error) return 0;
+    return typeof data === "number" ? data : 0;
+  } catch {
+    return 0;
+  }
+}
+

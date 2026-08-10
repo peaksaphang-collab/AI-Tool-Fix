@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Camera, Search, ArrowRight, Sparkles, BellRing, Wrench } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/app/setup-required";
 
 const STEPS = [
   {
@@ -21,10 +23,27 @@ const STEPS = [
   },
 ];
 
-export default function Home() {
+// สถิติรวมแบบไม่ระบุตัวตน — สร้างความเชื่อมั่นโดยไม่เปิดข้อมูลใคร
+async function getStats() {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("public_repair_stats");
+    if (error) return null;
+    return data?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export const revalidate = 300;
+
+export default async function Home() {
+  const stats = await getStats();
+  const hasStats = Boolean(stats && (stats.done_30d > 0 || stats.open_now > 0));
+
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-hidden px-4 py-10 sm:py-14">
-      {/* พื้นหลังไล่เฉดฟ้า + แสงนวล — CSS ล้วน ไม่มี WebGL ไม่กินแบต */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(120%_80%_at_50%_-10%,var(--color-accent)_0%,transparent_60%)]"
@@ -57,17 +76,59 @@ export default function Home() {
         <div className="flex w-full flex-col gap-3">
           <Link
             href="/report"
-            className={buttonVariants({ size: "lg", className: "h-14 w-full text-base shadow-lg shadow-primary/20 press" })}
+            className={buttonVariants({
+              size: "lg",
+              className: "h-14 w-full text-base shadow-lg shadow-primary/20 press",
+            })}
           >
             <Camera className="size-5" /> แจ้งซ่อม
           </Link>
           <Link
             href="/track"
-            className={buttonVariants({ variant: "outline", size: "lg", className: "h-12 w-full press" })}
+            className={buttonVariants({
+              variant: "outline",
+              size: "lg",
+              className: "h-12 w-full press",
+            })}
           >
             <Search className="size-4" /> ติดตามสถานะที่แจ้งไว้
           </Link>
         </div>
+
+        {hasStats && stats && (
+          <dl className="reveal glass grid w-full grid-cols-3 divide-x rounded-2xl px-2 py-3 text-center">
+            <div className="px-1">
+              <dd className="text-xl font-bold tabular-nums text-primary">
+                {stats.done_30d}
+              </dd>
+              <dt className="text-[11px] leading-tight text-muted-foreground">
+                ซ่อมเสร็จ
+                <br />
+                ใน 30 วัน
+              </dt>
+            </div>
+            <div className="px-1">
+              <dd className="text-xl font-bold tabular-nums text-primary">
+                {stats.avg_hours != null ? `${Math.round(stats.avg_hours)}` : "—"}
+              </dd>
+              <dt className="text-[11px] leading-tight text-muted-foreground">
+                ชั่วโมงเฉลี่ย
+                <br />
+                ต่องาน
+              </dt>
+            </div>
+            <div className="px-1">
+              <dd className="text-xl font-bold tabular-nums text-primary">
+                {stats.open_now}
+              </dd>
+              <dt className="text-[11px] leading-tight text-muted-foreground">
+                กำลัง
+                <br />
+                ดำเนินการ
+              </dt>
+            </div>
+          </dl>
+        )}
       </section>
 
       <section className="mt-14 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
