@@ -7,6 +7,7 @@ import { analyzePhoto } from "@/lib/ai/analyze-photo";
 export interface SubmitReportState {
   status: "idle" | "success" | "error";
   message?: string;
+  trackingCode?: string;
 }
 
 const ALLOWED_TYPES: Record<string, "image/jpeg" | "image/png" | "image/webp"> = {
@@ -14,6 +15,15 @@ const ALLOWED_TYPES: Record<string, "image/jpeg" | "image/png" | "image/webp"> =
   "image/png": "image/png",
   "image/webp": "image/webp",
 };
+
+// รหัสติดตามให้ผู้แจ้ง — ตัดตัวที่สับสน (0/O, 1/I) ออก บอกกันปากเปล่าได้ไม่ผิด
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function makeTrackingCode() {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
+}
 
 export async function submitReport(
   _prevState: SubmitReportState,
@@ -61,26 +71,44 @@ export async function submitReport(
   const base64 = Buffer.from(bytes).toString("base64");
   const analysis = await analyzePhoto(base64, mediaType);
 
-  // The reporter may pick a service type; otherwise the AI's classification
-  // fills it in ("แค่ถ่ายรูป AI วิเคราะห์ให้ทั้งหมด").
   const pickedServiceType =
     typeof serviceTypeRaw === "string" && /^[1-5]$/.test(serviceTypeRaw)
       ? Number(serviceTypeRaw)
       : null;
 
-  const { error: insertError } = await supabase.from("reports").insert({
-    building_id: buildingId,
-    room_id: roomId,
-    photo_path: photoPath,
-    reporter_name: typeof reporterName === "string" && reporterName.trim() ? reporterName.trim() : null,
-    contact_phone:
-      typeof contactPhone === "string" && contactPhone.trim() ? contactPhone.trim() : null,
-    service_type_id: pickedServiceType ?? analysis?.serviceTypeId ?? null,
-    urgency: analysis?.urgency ?? null,
-    ai_equipment_type: analysis?.equipmentType ?? null,
-    ai_description: analysis?.description ?? null,
-    ai_confidence: analysis?.confidence ?? null,
-  });
+  // ชนรหัสซ้ำมีโอกาสน้อยมาก (1 ใน พันล้าน) แต่กันไว้ด้วยการลองใหม่
+  let trackingCode = makeTrackingCode();
+  let insertError = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await supabase.from("reports").insert({
+      building_id: buildingId,
+      room_id: roomId,
+      photo_path: photoPath,
+      tracking_code: trackingCode,
+      reporter_name:
+        typeof reporterName === "string" && reporterName.trim()
+          ? reporterName.trim()
+          : null,
+      contact_phone:
+        typeof contactPhone === "string" && contactPhone.trim()
+          ? contactPhone.trim()
+          : null,
+      service_type_id: pickedServiceType ?? analysis?.serviceTypeId ?? null,
+      urgency: analysis?.urgency ?? null,
+      ai_equipment_type: analysis?.equipmentType ?? null,
+      ai_description: analysis?.description ?? null,
+      ai_confidence: analysis?.confidence ?? null,
+    });
+
+    if (!error) {
+      insertError = null;
+      break;
+    }
+    insertError = error;
+    if (error.code !== "23505") break; // ไม่ใช่รหัสซ้ำ ก็ไม่ต้องลองใหม่
+    trackingCode = makeTrackingCode();
+  }
 
   if (insertError) {
     console.error("Report insert failed:", insertError);
@@ -88,5 +116,9 @@ export async function submitReport(
     return { status: "error", message: "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่" };
   }
 
-  return { status: "success", message: "แจ้งซ่อมเรียบร้อยแล้ว ขอบคุณครับ" };
+  return {
+    status: "success",
+    message: "แจ้งซ่อมเรียบร้อยแล้ว ขอบคุณครับ",
+    trackingCode,
+  };
 }

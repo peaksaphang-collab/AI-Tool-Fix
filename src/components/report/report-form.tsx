@@ -2,8 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useActionState } from "react";
-import { Camera, CheckCircle2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Camera, Check, CheckCircle2, Copy, Loader2, Search } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +34,7 @@ export function ReportForm({
   const [state, formAction, pending] = useActionState(submitReport, initialState);
   const [buildingId, setBuildingId] = useState<string>("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const roomsForBuilding = useMemo(
@@ -43,11 +44,49 @@ export function ReportForm({
 
   if (state.status === "success") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-8 text-center">
-        <CheckCircle2 className="size-10 text-emerald-500" />
+      <div className="reveal glass flex flex-col items-center gap-4 rounded-2xl p-8 text-center">
+        <CheckCircle2 className="size-12 text-primary" />
         <p className="text-lg font-medium">{state.message}</p>
+
+        {state.trackingCode && (
+          <div className="w-full space-y-2 rounded-xl bg-primary/5 p-4">
+            <p className="text-xs text-muted-foreground">
+              รหัสติดตามของคุณ — เก็บไว้เช็คสถานะได้ตลอด
+            </p>
+            <p className="select-all font-mono text-3xl font-bold tracking-[0.25em] text-primary">
+              {state.trackingCode}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="press"
+                onClick={() => {
+                  navigator.clipboard?.writeText(state.trackingCode ?? "");
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                {copied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
+              </Button>
+              <a
+                href={`/track?code=${state.trackingCode}`}
+                className={buttonVariants({
+                  size: "sm",
+                  variant: "outline",
+                  className: "press",
+                })}
+              >
+                <Search className="size-4" /> ติดตามสถานะ
+              </a>
+            </div>
+          </div>
+        )}
+
         <Button
-          variant="outline"
+          variant="ghost"
+          className="press"
           onClick={() => {
             formRef.current?.reset();
             setPreview(null);
@@ -67,11 +106,15 @@ export function ReportForm({
         <Label htmlFor="photo">ถ่ายรูปสิ่งที่เสีย</Label>
         <label
           htmlFor="photo"
-          className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/40 text-muted-foreground hover:bg-muted/60"
+          className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/60"
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="ตัวอย่างรูปที่แจ้ง" className="size-full rounded-lg object-cover" />
+            <img
+              src={preview}
+              alt="ตัวอย่างรูปที่แจ้ง"
+              className="size-full rounded-xl object-cover"
+            />
           ) : (
             <>
               <Camera className="size-8" />
@@ -169,7 +212,7 @@ export function ReportForm({
         <p className="text-sm text-destructive">{state.message}</p>
       )}
 
-      <Button type="submit" disabled={pending} size="lg">
+      <Button type="submit" disabled={pending} size="lg" className="h-12 press">
         {pending ? (
           <>
             <Loader2 className="animate-spin" /> กำลังส่ง...

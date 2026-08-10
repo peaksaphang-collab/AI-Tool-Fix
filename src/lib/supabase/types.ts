@@ -1,10 +1,22 @@
-// Hand-written to match supabase/migrations/0001_init.sql.
-// Once the project is linked, regenerate with:
+// Hand-written to match supabase/migrations/*.sql
 //   npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.ts
 
 export type ReportStatus = "pending" | "in_progress" | "done" | "cannot_proceed";
 
 export type Urgency = "critical" | "high" | "medium" | "low";
+
+export interface PublicReportStatus {
+  tracking_code: string;
+  status: ReportStatus;
+  urgency: Urgency | null;
+  building_name: string;
+  room_name: string;
+  service_type_name: string | null;
+  equipment: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
 
 export interface Database {
   public: {
@@ -74,6 +86,7 @@ export interface Database {
           contact_phone: string | null;
           assigned_to: string | null;
           urgency: Urgency | null;
+          tracking_code: string | null;
           created_at: string;
           updated_at: string;
           resolved_at: string | null;
@@ -93,6 +106,7 @@ export interface Database {
           contact_phone?: string | null;
           assigned_to?: string | null;
           urgency?: Urgency | null;
+          tracking_code?: string | null;
           created_at?: string;
           updated_at?: string;
           resolved_at?: string | null;
@@ -112,6 +126,7 @@ export interface Database {
           contact_phone?: string | null;
           assigned_to?: string | null;
           urgency?: Urgency | null;
+          tracking_code?: string | null;
           created_at?: string;
           updated_at?: string;
           resolved_at?: string | null;
@@ -175,7 +190,20 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      public_report_status: {
+        Args: { code: string };
+        Returns: PublicReportStatus[];
+      };
+      public_repair_stats: {
+        Args: Record<string, never>;
+        Returns: { done_30d: number; open_now: number; avg_hours: number | null }[];
+      };
+      public_open_count_for_room: {
+        Args: { room: string };
+        Returns: number;
+      };
+    };
     Enums: { report_status: ReportStatus };
     CompositeTypes: Record<string, never>;
   };

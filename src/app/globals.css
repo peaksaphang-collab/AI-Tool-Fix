@@ -202,3 +202,85 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   เทคนิคภาพแบบเบา — ไม่มี WebGL/3D engine ใช้เฉพาะ CSS สมัยใหม่
+   โหลดเร็ว ไม่กินแบต ทำงานได้ทุกเครื่อง และเคารพ prefers-reduced-motion
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Glass / depth layering */
+  .glass {
+    background: color-mix(in oklab, var(--card) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    box-shadow:
+      0 1px 2px -1px oklch(0.45 0.155 258 / 0.10),
+      0 8px 24px -12px oklch(0.45 0.155 258 / 0.22);
+  }
+
+  /* ปุ่มมี feedback ตอนกด แบบ spring — ให้ความรู้สึกเหมือนแอปเนทีฟ */
+  .press {
+    transition:
+      transform 220ms linear(0, 0.4 20%, 1.05 55%, 0.99 75%, 1),
+      box-shadow 220ms ease;
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /* เนื้อหาค่อยๆ ปรากฏตอนเลื่อนถึง — scroll-driven animation ระดับ native
+     ไม่ใช้ JS ไม่มี IntersectionObserver ไม่มี layout thrash */
+  .reveal {
+    animation: reveal-in both ease-out;
+    animation-timeline: view();
+    animation-range: entry 0% cover 22%;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* เบราว์เซอร์ที่ยังไม่รองรับ scroll-driven animation ให้แสดงปกติทันที */
+@supports not (animation-timeline: view()) {
+  .reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* เปลี่ยนหน้าแบบลื่นด้วย View Transitions API (รองรับก็สวย ไม่รองรับก็ใช้ได้ปกติ) */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .press:active {
+    transform: none;
+  }
+  @view-transition {
+    navigation: none;
+  }
+}
+
