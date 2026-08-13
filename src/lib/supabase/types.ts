@@ -230,6 +230,23 @@ export interface Database {
         Args: { room: string };
         Returns: number;
       };
+      rate_report: {
+        Args: { code: string; rating: number; comment: string | null };
+        Returns: string;
+      };
+      research_metrics: {
+        Args: Record<string, never>;
+        Returns: {
+          ai_analyzed: number;
+          ai_type_correct: number;
+          ai_type_accuracy: number | null;
+          ai_urgency_correct: number;
+          ai_urgency_accuracy: number | null;
+          avg_submit_seconds: number | null;
+          rated_count: number;
+          avg_satisfaction: number | null;
+        }[];
+      };
     };
     Enums: { report_status: ReportStatus };
     CompositeTypes: Record<string, never>;

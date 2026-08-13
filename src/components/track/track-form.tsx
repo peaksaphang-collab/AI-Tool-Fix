@@ -7,6 +7,7 @@ import { CheckCircle2, Clock, Loader2, Search, Wrench, XCircle } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lookupReport, type TrackResult } from "@/app/track/actions";
+import { RatingForm } from "@/components/track/rating-form";
 
 const STEPS = [
   { key: "pending", label: "รับเรื่องแล้ว", icon: Clock },
@@ -138,6 +139,10 @@ export function TrackForm() {
               </>
             )}
           </dl>
+
+          {(result.status === "done" || cancelled) && (
+            <RatingForm trackingCode={result.tracking_code} />
+          )}
         </div>
       )}
     </div>

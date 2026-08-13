@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { AnalyticsClient } from "@/components/analytics/analytics-client";
 import type { ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import type { TimelineEvent } from "@/components/analytics/timeline";
+import {
+  ResearchMetricsPanel,
+  type ResearchMetrics,
+} from "@/components/analytics/research-metrics";
 import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
 
 export default async function AnalyticsPage() {
@@ -75,9 +79,14 @@ export default async function AnalyticsPage() {
     ];
   });
 
+  // ยังไม่ได้รัน migration 0009 ก็ยังเปิดหน้านี้ได้ แค่แผงตัวชี้วัดจะบอกให้ไปรันก่อน
+  const { data: metricsRows } = await supabase.rpc("research_metrics");
+  const metrics = (metricsRows as ResearchMetrics[] | null)?.[0] ?? null;
+
   return (
-    <main className="px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">แดชบอร์ดสรุปข้อมูล</h1>
+    <main className="flex flex-col gap-6 px-4 py-8">
+      <h1 className="text-2xl font-semibold">แดชบอร์ดสรุปข้อมูล</h1>
+      <ResearchMetricsPanel metrics={metrics} />
       <AnalyticsClient reports={reportsWithLocation} timelineEvents={timelineEvents} />
     </main>
   );

@@ -40,3 +40,42 @@ export async function lookupReport(
 
   return { ok: true, report };
 }
+
+// ให้คะแนนความพึงพอใจด้วยรหัสติดตาม — ให้ได้เฉพาะใบที่ปิดงานแล้ว และครั้งเดียว
+// ฐานข้อมูลเป็นผู้บังคับเงื่อนไขทั้งหมด (ฟังก์ชัน rate_report)
+export async function rateReport(
+  code: string,
+  rating: number,
+  comment: string
+): Promise<{ ok: boolean; message: string }> {
+  const clean = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { ok: false, message: "กรุณาเลือกคะแนน 1-5 ดาว" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("rate_report", {
+    code: clean,
+    rating,
+    comment: comment.trim() || null,
+  });
+
+  if (error) {
+    console.error("rateReport failed:", error);
+    // ฐานที่ยังไม่ได้รัน migration 0009 จะยังไม่มีฟังก์ชันนี้
+    return { ok: false, message: "ระบบประเมินยังไม่พร้อม กรุณาลองใหม่ภายหลัง" };
+  }
+
+  switch (data) {
+    case "ok":
+      return { ok: true, message: "ขอบคุณสำหรับคะแนนครับ" };
+    case "already_rated":
+      return { ok: false, message: "ให้คะแนนเรื่องนี้ไปแล้ว ขอบคุณครับ" };
+    case "not_closed":
+      return { ok: false, message: "ให้คะแนนได้เมื่อปิดงานแล้วเท่านั้น" };
+    case "not_found":
+      return { ok: false, message: "ไม่พบรหัสนี้" };
+    default:
+      return { ok: false, message: "ให้คะแนนไม่สำเร็จ กรุณาลองใหม่" };
+  }
+}
