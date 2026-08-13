@@ -33,14 +33,21 @@ export async function updateReportDetails(
       ? values.serviceTypeId
       : null;
 
-  const { error } = await supabase
+  // แก้เฉพาะค่าที่ยืนยันแล้ว — คำทายเดิมของ AI (ai_suggested_*) ไม่ถูกแตะ
+  // เพื่อให้ยังคำนวณความแม่นยำของ AI ย้อนหลังได้
+  const patch = { service_type_id: serviceTypeId, urgency, ai_equipment_type: equipment };
+  const audit = { corrected_at: new Date().toISOString(), corrected_by: user.id };
+
+  let { error } = await supabase
     .from("reports")
-    .update({
-      service_type_id: serviceTypeId,
-      urgency,
-      ai_equipment_type: equipment,
-    })
+    .update({ ...patch, ...audit })
     .eq("id", reportId);
+
+  // ฐานที่ยังไม่ได้รัน migration 0009 ยังไม่มีคอลัมน์ audit — บันทึกค่าหลักให้ได้ก่อน
+  if (error && (error.code === "PGRST204" || error.code === "42703")) {
+    console.warn("Correction audit columns missing — run migration 0009.");
+    ({ error } = await supabase.from("reports").update(patch).eq("id", reportId));
+  }
 
   if (error) {
     throw new Error(error.message);

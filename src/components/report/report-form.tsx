@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useActionState } from "react";
 import { Camera, Check, CheckCircle2, Copy, Loader2, Search } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -38,6 +38,13 @@ export function ReportForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  // จับเวลาที่ผู้ใช้ใช้กรอกจริง — ข้อมูลวัดผล "ลดเวลาแจ้ง" ของงานวิจัย
+  // ตั้งค่าใน effect เพราะ Date.now() เรียกตอน render ไม่ได้ (ผลไม่คงที่)
+  const startedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
 
   const roomsForBuilding = useMemo(
     () => rooms.filter((room) => room.building_id === buildingId),
@@ -103,7 +110,19 @@ export function ReportForm({
   }
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form
+      ref={formRef}
+      action={(fd) => {
+        if (startedAtRef.current !== null) {
+          fd.set(
+            "elapsedSeconds",
+            String(Math.round((Date.now() - startedAtRef.current) / 1000))
+          );
+        }
+        return formAction(fd);
+      }}
+      className="flex flex-col gap-5"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="photo">ถ่ายรูปสิ่งที่เสีย</Label>
         <label

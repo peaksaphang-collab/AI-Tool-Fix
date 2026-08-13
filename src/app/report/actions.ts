@@ -34,6 +34,7 @@ export async function submitReport(
   const reporterName = formData.get("reporterName");
   const contactPhone = formData.get("contactPhone");
   const serviceTypeRaw = formData.get("serviceTypeId");
+  const elapsedRaw = formData.get("elapsedSeconds");
   const photo = formData.get("photo");
 
   if (typeof buildingId !== "string" || !buildingId) {
@@ -76,29 +77,55 @@ export async function submitReport(
       ? Number(serviceTypeRaw)
       : null;
 
+  // เวลาที่ผู้ใช้ใช้กรอกจริง — ใช้วัดวัตถุประสงค์ "ลดเวลาแจ้ง" ของงานวิจัย
+  const elapsedSeconds =
+    typeof elapsedRaw === "string" && /^\d{1,5}$/.test(elapsedRaw)
+      ? Math.min(Number(elapsedRaw), 7200)
+      : null;
+
+  const baseRow = {
+    building_id: buildingId,
+    room_id: roomId,
+    photo_path: photoPath,
+    reporter_name:
+      typeof reporterName === "string" && reporterName.trim()
+        ? reporterName.trim()
+        : null,
+    contact_phone:
+      typeof contactPhone === "string" && contactPhone.trim()
+        ? contactPhone.trim()
+        : null,
+    service_type_id: pickedServiceType ?? analysis?.serviceTypeId ?? null,
+    urgency: analysis?.urgency ?? null,
+    ai_equipment_type: analysis?.equipmentType ?? null,
+    ai_description: analysis?.description ?? null,
+    ai_confidence: analysis?.confidence ?? null,
+  };
+
+  // คำทายดั้งเดิมของ AI + เวลากรอกฟอร์ม — เก็บแยกไว้ถาวรเพื่อวัดผลงานวิจัย
+  // (ต้องรัน migration 0009 ก่อนจึงจะมีคอลัมน์เหล่านี้)
+  const researchRow = {
+    ai_suggested_service_type_id: analysis?.serviceTypeId ?? null,
+    ai_suggested_urgency: analysis?.urgency ?? null,
+    ai_suggested_equipment: analysis?.equipmentType ?? null,
+    submit_seconds: elapsedSeconds,
+  };
+
+  // ยังไม่ได้รัน migration 0009 ก็ยังต้องรับแจ้งซ่อมได้ — ถ้าฐานยังไม่มี
+  // คอลัมน์วิจัย ให้ตัดทิ้งแล้วบันทึกส่วนที่เหลือแทนที่จะปฏิเสธทั้งใบ
+  const isUnknownColumn = (code?: string) =>
+    code === "PGRST204" || code === "42703";
+
   // ชนรหัสซ้ำมีโอกาสน้อยมาก (1 ใน พันล้าน) แต่กันไว้ด้วยการลองใหม่
   let trackingCode = makeTrackingCode();
+  let includeResearch = true;
   let insertError = null;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     const { error } = await supabase.from("reports").insert({
-      building_id: buildingId,
-      room_id: roomId,
-      photo_path: photoPath,
+      ...baseRow,
+      ...(includeResearch ? researchRow : {}),
       tracking_code: trackingCode,
-      reporter_name:
-        typeof reporterName === "string" && reporterName.trim()
-          ? reporterName.trim()
-          : null,
-      contact_phone:
-        typeof contactPhone === "string" && contactPhone.trim()
-          ? contactPhone.trim()
-          : null,
-      service_type_id: pickedServiceType ?? analysis?.serviceTypeId ?? null,
-      urgency: analysis?.urgency ?? null,
-      ai_equipment_type: analysis?.equipmentType ?? null,
-      ai_description: analysis?.description ?? null,
-      ai_confidence: analysis?.confidence ?? null,
     });
 
     if (!error) {
@@ -106,6 +133,12 @@ export async function submitReport(
       break;
     }
     insertError = error;
+
+    if (includeResearch && isUnknownColumn(error.code)) {
+      console.warn("Research columns missing — run migration 0009. Falling back.");
+      includeResearch = false;
+      continue;
+    }
     if (error.code !== "23505") break; // ไม่ใช่รหัสซ้ำ ก็ไม่ต้องลองใหม่
     trackingCode = makeTrackingCode();
   }
