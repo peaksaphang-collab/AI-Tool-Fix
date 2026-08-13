@@ -46,6 +46,24 @@ export function ReportForm({
     startedAtRef.current = Date.now();
   }, []);
 
+  // Base UI แสดงค่าดิบใน trigger ถ้าไม่บอก mapping value → ป้ายชื่อ
+  // ไม่มี items ผู้ใช้จะเห็น UUID แทนชื่ออาคาร/ห้อง
+  const buildingItems = useMemo(
+    () => Object.fromEntries(buildings.map((b) => [b.id, b.name])),
+    [buildings]
+  );
+  const roomItems = useMemo(
+    () =>
+      Object.fromEntries(
+        rooms.map((r) => [r.id, r.floor ? `${r.name} (ชั้น ${r.floor})` : r.name])
+      ),
+    [rooms]
+  );
+  const serviceTypeItems = useMemo(
+    () => Object.fromEntries(serviceTypes.map((t) => [String(t.id), t.name])),
+    [serviceTypes]
+  );
+
   const roomsForBuilding = useMemo(
     () => rooms.filter((room) => room.building_id === buildingId),
     [rooms, buildingId]
@@ -162,6 +180,7 @@ export function ReportForm({
         <Label htmlFor="buildingId">อาคาร</Label>
         <Select
           name="buildingId"
+          items={buildingItems}
           value={buildingId}
           onValueChange={(value) => {
             setBuildingId(value ?? "");
@@ -186,6 +205,7 @@ export function ReportForm({
         <Label htmlFor="roomId">ห้อง</Label>
         <Select
           name="roomId"
+          items={roomItems}
           value={roomId}
           onValueChange={(value) => setRoomId(value ?? "")}
           disabled={!buildingId}
@@ -208,7 +228,7 @@ export function ReportForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="serviceTypeId">ประเภทงานซ่อม (ไม่บังคับ)</Label>
-        <Select name="serviceTypeId">
+        <Select name="serviceTypeId" items={serviceTypeItems}>
           <SelectTrigger id="serviceTypeId" className="w-full">
             <SelectValue placeholder="ไม่เลือกก็ได้ — AI วิเคราะห์ให้อัตโนมัติ" />
           </SelectTrigger>

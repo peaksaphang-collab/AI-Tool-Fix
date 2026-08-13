@@ -35,6 +35,12 @@ const URGENCY_OPTIONS: { value: Urgency; label: string }[] = [
   { value: "low", label: "ไม่เร่งด่วน" },
 ];
 
+// Base UI แสดงค่าดิบใน trigger ถ้าไม่บอก mapping value → ป้ายชื่อ
+const URGENCY_ITEMS = {
+  none: "ยังไม่ระบุ",
+  ...Object.fromEntries(URGENCY_OPTIONS.map((u) => [u.value, u.label])),
+};
+
 export function EditDetailsDialog({
   reportId,
   title,
@@ -102,6 +108,10 @@ export function EditDetailsDialog({
           <div className="flex flex-col gap-2">
             <Label>ประเภทงานซ่อม</Label>
             <Select
+              items={{
+                none: "ยังไม่ระบุ",
+                ...Object.fromEntries(serviceTypes.map((t) => [String(t.id), t.name])),
+              }}
               value={serviceTypeId}
               onValueChange={(v) => setServiceTypeId(v ?? "none")}
             >
@@ -121,7 +131,11 @@ export function EditDetailsDialog({
 
           <div className="flex flex-col gap-2">
             <Label>ความด่วน</Label>
-            <Select value={urgency} onValueChange={(v) => setUrgency(v ?? "none")}>
+            <Select
+              items={URGENCY_ITEMS}
+              value={urgency}
+              onValueChange={(v) => setUrgency(v ?? "none")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
