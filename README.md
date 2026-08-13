@@ -2,6 +2,13 @@
 
 ระบบแจ้งซ่อมอุปกรณ์ที่ให้ผู้แจ้งถ่ายรูป เลือกอาคาร/ห้อง แล้วให้ AI วิเคราะห์ว่าอุปกรณ์อะไรเสียโดยอัตโนมัติ พร้อมแดชบอร์ดสำหรับเจ้าหน้าที่ติดตามสถานะแบบเรียลไทม์และดูสรุปข้อมูล
 
+## Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpeaksaphang-collab%2FAI-Tool-Fix&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,ANTHROPIC_API_KEY&envDescription=URL%20และ%20anon%20key%20จาก%20Supabase%20(ANTHROPIC_API_KEY%20ใส่ทีหลังได้)&project-name=ai-tool-fix&repository-name=ai-tool-fix)
+
+กดปุ่มด้านบนในบราวเซอร์ที่ล็อกอิน Vercel อยู่ — หน้า import จะถามค่า env ให้ครบเอง
+ค่าที่ต้องกรอกอยู่ใน [`docs/DEPLOY.md`](docs/DEPLOY.md) (copy วางได้เลย)
+
 ## Stack
 
 - [Next.js 16](https://nextjs.org) (App Router, Turbopack, Server Actions)
