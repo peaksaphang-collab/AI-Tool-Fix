@@ -10,11 +10,8 @@ export function DuplicateNotice({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!roomId) {
-      setCount(0);
-      return;
-    }
-    openCountForRoom(roomId).then((n) => {
+    const pending = roomId ? openCountForRoom(roomId) : Promise.resolve(0);
+    pending.then((n) => {
       if (!cancelled) setCount(n);
     });
     return () => {
