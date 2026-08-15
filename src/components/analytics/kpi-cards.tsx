@@ -7,6 +7,8 @@ export function KpiCards({
   done,
   cannotProceed,
   avgResolutionHours,
+  slaRate,
+  slaBreachedOpen,
 }: {
   total: number;
   pending: number;
@@ -14,6 +16,8 @@ export function KpiCards({
   done: number;
   cannotProceed: number;
   avgResolutionHours: number | null;
+  slaRate: number | null;
+  slaBreachedOpen: number;
 }) {
   const items = [
     { label: "รายการทั้งหมด", value: total },
@@ -25,10 +29,15 @@ export function KpiCards({
       label: "เวลาซ่อมเฉลี่ย",
       value: avgResolutionHours === null ? "-" : `${avgResolutionHours.toFixed(1)} ชม.`,
     },
+    {
+      label: "ทันกำหนด SLA",
+      value: slaRate === null ? "-" : `${slaRate}%`,
+    },
+    { label: "เกิน SLA (ค้างอยู่)", value: slaBreachedOpen },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
       {items.map((item) => (
         <Card key={item.label}>
           <CardHeader className="pb-2">

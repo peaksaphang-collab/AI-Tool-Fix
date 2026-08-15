@@ -13,6 +13,8 @@ import { Heatmap } from "@/components/analytics/heatmap";
 import { CalendarView } from "@/components/analytics/calendar-view";
 import type { ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import type { ReportStatus } from "@/lib/supabase/types";
+import { slaCompliance } from "@/lib/sla";
+import { ExportCsvButton } from "@/components/analytics/export-csv-button";
 
 export function AnalyticsClient({
   reports,
@@ -23,6 +25,9 @@ export function AnalyticsClient({
 }) {
   const [items, setItems] = useState(reports);
   const [, startTransition] = useTransition();
+  // เวลาอ้างอิงเดียวทั้งหน้า — จับตอน mount เพื่อไม่ให้ค่า SLA เปลี่ยนทุก render
+  const [now] = useState(() => Date.now());
+  const sla = slaCompliance(items, now);
 
   const total = items.length;
   const pending = items.filter((r) => r.status === "pending").length;
@@ -85,6 +90,8 @@ export function AnalyticsClient({
           done={done}
           cannotProceed={cannotProceed}
           avgResolutionHours={avgResolutionHours}
+          slaRate={sla.rate}
+          slaBreachedOpen={sla.breachedOpen}
         />
         <ProgressRing
           percent={total === 0 ? 0 : (done / total) * 100}
@@ -100,12 +107,15 @@ export function AnalyticsClient({
       </div>
 
       <Tabs defaultValue="kanban">
-        <TabsList>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
-          <TabsTrigger value="calendar">ปฏิทิน</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
+            <TabsTrigger value="calendar">ปฏิทิน</TabsTrigger>
+          </TabsList>
+          <ExportCsvButton />
+        </div>
         <TabsContent value="kanban" className="pt-4">
           <KanbanBoard reports={items} onStatusChange={handleStatusChange} />
         </TabsContent>

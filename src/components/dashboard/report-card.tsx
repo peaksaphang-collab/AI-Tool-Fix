@@ -9,6 +9,7 @@ import {
   ImageOff,
   Phone,
   RotateCcw,
+  Timer,
   Undo2,
   UserRound,
 } from "lucide-react";
@@ -36,6 +37,7 @@ import { getSignedPhotoUrl } from "@/app/dashboard/actions";
 import { EditDetailsDialog } from "@/components/dashboard/edit-details-dialog";
 import type { ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import type { Database, Urgency } from "@/lib/supabase/types";
+import { SLA_LABEL, slaInfo } from "@/lib/sla";
 
 type Staff = Database["public"]["Tables"]["staff"]["Row"];
 type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
@@ -61,7 +63,6 @@ const URGENCY_CLASS: Record<Urgency, string> = {
   low: "bg-slate-300 text-slate-800",
 };
 
-const OVERDUE_MS = 24 * 60 * 60 * 1000;
 
 export function ReportCard({
   report,
@@ -91,6 +92,7 @@ export function ReportCard({
   }, [report.photo_path]);
 
   const isOpen = report.status === "pending" || report.status === "in_progress";
+  const sla = slaInfo(report, now);
   const createdAt = new Date(report.created_at);
   const exactTime = format(createdAt, "d MMM yyyy HH:mm น.", { locale: th });
   const showPhoto = Boolean(photoUrl) && !photoBroken;
@@ -155,8 +157,19 @@ export function ReportCard({
                 {URGENCY_LABEL[report.urgency]}
               </Badge>
             )}
-            {isOpen && now - createdAt.getTime() > OVERDUE_MS && (
-              <Badge variant="destructive">ค้างนาน</Badge>
+            {(sla.state === "warning" || sla.state === "breached") && (
+              <Badge
+                variant={sla.state === "breached" ? "destructive" : "outline"}
+                className={sla.state === "warning" ? "border-amber-500 text-amber-700" : ""}
+                title={`SLA ${SLA_LABEL[report.urgency ?? "medium"]} · ครบกำหนด ${sla.deadline.toLocaleString("th-TH")}`}
+              >
+                <Timer className="size-3" /> {sla.label}
+              </Badge>
+            )}
+            {sla.state === "missed" && (
+              <Badge variant="outline" className="border-red-300 text-red-700">
+                {sla.label}
+              </Badge>
             )}
             <Badge variant="outline">{STATUS_LABEL[report.status]}</Badge>
           </div>
