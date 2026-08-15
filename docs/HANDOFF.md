@@ -26,6 +26,11 @@ cp .env.local.example .env.local
 4. `supabase/migrations/0004_status_cannot_proceed.sql` — ✅ รันแล้ว
 5. `supabase/migrations/0005_service_types_and_fields.sql` — ✅ รันแล้ว (ประเภทงาน 5 แบบ)
 6. `supabase/migrations/0006_fix_rls_recursion.sql` — ✅ รันแล้ว (แก้ RLS recursion ด้วย `is_staff()`)
+7. `0007_security_hardening.sql` — ✅ รันแล้ว
+8. `0008_tracking_and_stats.sql` — ✅ รันแล้ว
+9. **`0009_research_metrics.sql` — ยังไม่ได้รัน** ← ค้างข้อเดียว
+   เปิด SQL Editor → วางทั้งไฟล์ → Run (มี `drop policy` ระบบจะถามยืนยัน กด Run query)
+   ระบบใช้งานได้ปกติแม้ยังไม่รัน แค่ยังไม่เก็บ KPI งานวิจัย
 
 > ตรวจแล้วด้วยข้อมูลจริง: REST คืน buildings 4 · rooms 11 · service_types 5,
 > ทดสอบส่งแจ้งซ่อม (อัปโหลดรูป 200 + insert 201) ผ่านสิทธิ์ anon สำเร็จ
