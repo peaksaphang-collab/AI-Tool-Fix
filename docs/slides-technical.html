@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบแจ้งซ่อมด้วย AI — Data Flow, Database, AI Logic</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #ffffff; --panel: #f8fafc; --line: #d8e0ea;
+    --ink: #0f1a2b; --muted: #5b6b81;
+    --accent: #0d7a5f; --accent2: #1d4ed8; --warn: #b45309; --danger: #b91c1c;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI",
+      "Thonburi", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide {
+    display: none; height: 100vh; padding: 5vh 6vw 8vh;
+    flex-direction: column; gap: 2.2vh;
+  }
+  .slide.active { display: flex; }
+  .kicker {
+    color: var(--accent); font-size: .8rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.02em; }
+  h2 { font-size: clamp(1.3rem, 2.6vw, 1.95rem); line-height: 1.25; letter-spacing: -.01em; }
+  h3 { font-size: 1rem; margin-bottom: .35rem; }
+  .sub { color: var(--muted); font-size: clamp(.9rem, 1.2vw, 1.05rem); line-height: 1.65; max-width: 76ch; }
+  .grid { display: grid; gap: 1rem; }
+  .cols2 { grid-template-columns: 1fr 1fr; }
+  .cols3 { grid-template-columns: repeat(3, 1fr); }
+  .cols4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 1rem 1.15rem;
+  }
+  .card p, .card li { color: var(--muted); font-size: .92rem; line-height: 1.6; }
+  .card ul { padding-left: 1.15rem; }
+  .card strong { color: var(--ink); }
+  figure { margin: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  figure svg { width: 100%; max-height: 62vh; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: .85rem; margin-top: .7rem; line-height: 1.55; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { border: 1px solid var(--line); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 600; }
+  td { color: var(--muted); }
+  td strong, th { color: var(--ink); }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    background: #eef2f7; color: #14306b; border-radius: 5px;
+    padding: .08em .38em; font-size: .88em;
+  }
+  pre {
+    background: #0f1a2b; color: #dbe6f5; border-radius: 10px;
+    padding: .9rem 1.1rem; overflow-x: auto; font-size: .82rem; line-height: 1.6;
+    font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  pre .k { color: #7dd3a0; } pre .s { color: #f0b866; } pre .c { color: #7f93ad; }
+  .tag {
+    display: inline-block; border: 1px solid var(--line); background: var(--panel);
+    border-radius: 999px; padding: .16rem .8rem; font-size: .82rem; margin: .15rem .2rem .15rem 0;
+    color: var(--ink);
+  }
+  .footer {
+    position: fixed; bottom: 1rem; left: 0; right: 0;
+    display: flex; justify-content: space-between; padding: 0 6vw;
+    color: var(--muted); font-size: .78rem; pointer-events: none;
+  }
+  @media (max-width: 860px) {
+    .cols2, .cols3, .cols4 { grid-template-columns: 1fr; }
+    .slide { overflow-y: auto; padding-top: 7vh; }
+    figure svg { max-height: none; }
+  }
+  @media print {
+    body { overflow: visible; }
+    .slide { display: flex !important; height: auto; min-height: 100vh; page-break-after: always; break-after: page; }
+    .footer { display: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide active">
+  <p class="kicker">Technical Deep Dive</p>
+  <h1>ระบบบริหารการซ่อมบำรุงด้วย AI<br>สถาปัตยกรรม · ฐานข้อมูล · ลอจิก AI</h1>
+  <p class="sub">เอกสารอธิบายกลไกภายในระบบสำหรับนำเสนอและถ่ายทอดต่อ —
+  ครอบคลุมเส้นทางข้อมูล (Data Flow) โครงสร้างฐานข้อมูล (Database Schema)
+  และวิธีที่ AI ตัดสินใจ (AI Logic) พร้อมเหตุผลเบื้องหลังการออกแบบแต่ละจุด</p>
+  <div>
+    <span class="tag">Next.js 16 · Server Actions</span>
+    <span class="tag">PostgreSQL · Row Level Security</span>
+    <span class="tag">Vision LLM · Structured Output</span>
+    <span class="tag">Realtime</span>
+  </div>
+  <p class="sub" style="margin-top:auto"><strong>ระบบใช้งานจริงแล้วที่</strong> ai-tool-fix-two.vercel.app</p>
+</section>
+
+<!-- 2 · Architecture -->
+<section class="slide">
+  <p class="kicker">Architecture</p>
+  <h2>ภาพรวมระบบ — ใครคุยกับใคร</h2>
+  <figure>
+    <svg viewBox="0 0 960 380" role="img" aria-label="ผังสถาปัตยกรรม: เบราว์เซอร์ผู้แจ้งและเจ้าหน้าที่คุยกับ Next.js ซึ่งคุยกับ Storage, Vision API และ Postgres โดย Postgres ส่ง Realtime กลับไปที่เจ้าหน้าที่">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="a2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#0d7a5f"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="20" y="40" width="170" height="90" rx="10"/>
+        <rect x="20" y="230" width="170" height="90" rx="10"/>
+        <rect x="330" y="130" width="200" height="100" rx="10" stroke-width="2.5"/>
+        <rect x="680" y="20" width="250" height="72" rx="10"/>
+        <rect x="680" y="128" width="250" height="72" rx="10"/>
+        <rect x="680" y="236" width="250" height="100" rx="10" stroke-width="2.5"/>
+      </g>
+      <g font-size="13" fill="currentColor">
+        <text x="105" y="78" text-anchor="middle" font-weight="600">ผู้แจ้ง (มือถือ)</text>
+        <text x="105" y="98" text-anchor="middle" font-size="11" opacity=".7">ไม่ต้องล็อกอิน</text>
+        <text x="105" y="268" text-anchor="middle" font-weight="600">เจ้าหน้าที่ (คอม)</text>
+        <text x="105" y="288" text-anchor="middle" font-size="11" opacity=".7">ล็อกอินก่อน</text>
+        <text x="430" y="172" text-anchor="middle" font-weight="700">Next.js Server</text>
+        <text x="430" y="192" text-anchor="middle" font-size="11" opacity=".75">Server Actions</text>
+        <text x="430" y="210" text-anchor="middle" font-size="11" opacity=".75">คีย์ทั้งหมดอยู่ฝั่งนี้</text>
+        <text x="805" y="50" text-anchor="middle" font-weight="600">Storage (private)</text>
+        <text x="805" y="70" text-anchor="middle" font-size="11" opacity=".7">รูปแจ้งซ่อม · signed URL</text>
+        <text x="805" y="158" text-anchor="middle" font-weight="600">Vision LLM API</text>
+        <text x="805" y="178" text-anchor="middle" font-size="11" opacity=".7">วิเคราะห์ภาพ</text>
+        <text x="805" y="270" text-anchor="middle" font-weight="700">PostgreSQL</text>
+        <text x="805" y="290" text-anchor="middle" font-size="11" opacity=".75">6 ตาราง + RLS + Trigger</text>
+        <text x="805" y="310" text-anchor="middle" font-size="11" opacity=".75">Realtime publication</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#a2)">
+        <line x1="190" y1="85" x2="330" y2="160"/>
+        <line x1="190" y1="275" x2="330" y2="205"/>
+        <line x1="530" y1="150" x2="680" y2="60"/>
+        <line x1="530" y1="175" x2="680" y2="165"/>
+        <line x1="530" y1="205" x2="680" y2="275"/>
+      </g>
+      <g font-size="11" fill="currentColor" opacity=".85">
+        <text x="240" y="112">รูป + ห้อง</text>
+        <text x="240" y="238">อ่าน/อัปเดต</text>
+        <text x="556" y="96">อัปโหลดรูป</text>
+        <text x="556" y="163">base64</text>
+        <text x="556" y="252">insert / update</text>
+      </g>
+      <path d="M680 320 C 560 372, 240 372, 145 322" fill="none" stroke="#0d7a5f" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a2g)"/>
+      <text x="410" y="368" font-size="12" fill="#0d7a5f" font-weight="600">Realtime — ทุกจอเปลี่ยนพร้อมกันโดยไม่ต้องรีเฟรช</text>
+    </svg>
+    <figcaption><strong>จุดสำคัญ:</strong> เบราว์เซอร์ไม่เคยคุยกับ Vision API ตรง ๆ — คีย์อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น
+    และเส้นสีเขียวคือทางเดียวที่ข้อมูลไหลกลับเองโดยไม่มีใครกดปุ่ม</figcaption>
+  </figure>
+</section>
+
+<!-- 3 · Data Flow -->
+<section class="slide">
+  <p class="kicker">Data Flow</p>
+  <h2>เส้นทางข้อมูล 1 ใบแจ้งซ่อม ตั้งแต่กดส่งถึงขึ้นจอช่าง</h2>
+  <figure>
+    <svg viewBox="0 0 960 400" role="img" aria-label="ลำดับเวลาการทำงาน 7 ขั้น จากผู้แจ้งกดส่ง ผ่านการอัปโหลดรูป วิเคราะห์ AI บันทึกฐานข้อมูล trigger และ realtime ถึงหน้าจอเจ้าหน้าที่">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g font-size="12" fill="currentColor" font-weight="600" text-anchor="middle">
+        <text x="80" y="26">ผู้แจ้ง</text>
+        <text x="300" y="26">Server Action</text>
+        <text x="520" y="26">Storage</text>
+        <text x="680" y="26">Vision API</text>
+        <text x="870" y="26">Postgres</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1" opacity=".28">
+        <line x1="80" y1="38" x2="80" y2="368"/>
+        <line x1="300" y1="38" x2="300" y2="368"/>
+        <line x1="520" y1="38" x2="520" y2="368"/>
+        <line x1="680" y1="38" x2="680" y2="368"/>
+        <line x1="870" y1="38" x2="870" y2="368"/>
+      </g>
+      <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#a3)">
+        <line x1="80" y1="66" x2="296" y2="66"/>
+        <line x1="300" y1="112" x2="516" y2="112"/>
+        <line x1="300" y1="158" x2="676" y2="158"/>
+        <line x1="680" y1="200" x2="304" y2="200"/>
+        <line x1="300" y1="248" x2="866" y2="248"/>
+        <line x1="870" y1="336" x2="84" y2="336"/>
+      </g>
+      <g font-size="11.5" fill="currentColor">
+        <text x="92" y="58">1 · รูป + อาคาร/ห้อง + เวลาที่ใช้กรอก</text>
+        <text x="312" y="104">2 · อัปโหลดเข้า bucket ปิด</text>
+        <text x="312" y="150">3 · ส่ง base64 + บังคับรูปแบบคำตอบ</text>
+        <text x="330" y="192">4 · JSON: อุปกรณ์ · อาการ · หมวด · ความด่วน</text>
+        <text x="312" y="240">5 · insert 1 แถว (พร้อมรหัสติดตาม 6 หลัก)</text>
+      </g>
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="782" y="266" width="176" height="46" rx="8"/>
+      </g>
+      <text x="870" y="285" font-size="11" fill="currentColor" text-anchor="middle" font-weight="600">6 · Trigger อัตโนมัติ</text>
+      <text x="870" y="302" font-size="10.5" fill="currentColor" text-anchor="middle" opacity=".75">เขียนประวัติสถานะ</text>
+      <text x="330" y="328" font-size="11.5" fill="#0d7a5f" font-weight="600">7 · Realtime → การ์ดเด้งขึ้นจอช่างทุกเครื่อง + toast เตือน</text>
+      <g fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5 3">
+        <rect x="596" y="176" width="168" height="40" rx="8"/>
+      </g>
+      <text x="680" y="200" font-size="10.5" fill="#b45309" text-anchor="middle">ล้มเหลว → คืน null (ไม่ throw)</text>
+    </svg>
+    <figcaption><strong>ขั้นที่ 4 เป็นหัวใจของความทนทาน:</strong> ถ้า Vision API ล่ม หมด quota หรือไม่มีคีย์
+    ฟังก์ชันคืนค่าว่างแทนที่จะโยน error ขั้น 5 จึงยังทำงาน — ใบแจ้งซ่อมเข้าระบบทุกครั้ง
+    ต่างกันแค่ช่องผล AI ว่างให้เจ้าหน้าที่กรอกเอง</figcaption>
+  </figure>
+</section>
+
+<!-- 4 · IPO -->
+<section class="slide">
+  <p class="kicker">Input · Process · Output</p>
+  <h2>อะไรเข้า อะไรเกิดขึ้น อะไรออก</h2>
+  <div class="grid cols4" style="flex:1; align-content:center">
+    <div class="card">
+      <h3>Input</h3>
+      <ul>
+        <li>รูปถ่าย JPEG/PNG/WEBP</li>
+        <li>อาคาร + ห้อง (เลือกจากรายการ)</li>
+        <li>ประเภทงาน (ไม่บังคับ)</li>
+        <li>ชื่อ + เบอร์ (ไม่บังคับ)</li>
+        <li><strong>เวลาที่ใช้กรอก</strong> (จับอัตโนมัติ)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Process</h3>
+      <ul>
+        <li>ตรวจชนิดไฟล์และขนาด</li>
+        <li>อัปโหลดเข้า bucket ปิด</li>
+        <li>AI จำแนก 5 หมวด + 4 ระดับความด่วน</li>
+        <li>ออกรหัสติดตาม (ชนกันได้ 1 ใน พันล้าน จึงลองใหม่อัตโนมัติ)</li>
+        <li>คำนวณกำหนด SLA ตามความด่วน</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Output</h3>
+      <ul>
+        <li>1 แถวใน <code>reports</code></li>
+        <li>1 แถวประวัติสถานะ (จาก trigger)</li>
+        <li>รหัสติดตามคืนให้ผู้แจ้ง</li>
+        <li>คำทาย AI 2 ชุด: <strong>แช่แข็ง</strong> + <strong>แก้ได้</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Display</h3>
+      <ul>
+        <li>บอร์ด 2 ฝั่ง เรียงตามความด่วน</li>
+        <li>ป้ายนับถอยหลัง SLA</li>
+        <li>Kanban ลากได้ · Timeline · Heatmap · ปฏิทิน</li>
+        <li>สรุปวัน/เดือน/ปี + ส่งออก CSV</li>
+      </ul>
+    </div>
+  </div>
+  <p class="sub"><strong>ข้อสังเกตเชิงออกแบบ:</strong> ผู้ใช้แตะจริงแค่ 3 จุด (รูป → อาคาร → ห้อง)
+  ที่เหลือระบบเติมให้เอง — ตัวเลข "เวลาที่ใช้กรอก" ถูกเก็บทุกใบเพื่อพิสูจน์ข้อนี้ด้วยข้อมูลจริง ไม่ใช่คำกล่าวอ้าง</p>
+</section>
+
+<!-- 5 · ER -->
+<section class="slide">
+  <p class="kicker">Database Schema</p>
+  <h2>โครงสร้างฐานข้อมูล — 6 ตาราง</h2>
+  <figure>
+    <svg viewBox="0 0 960 400" role="img" aria-label="ผัง ER: buildings และ rooms และ service_types และ staff เชื่อมเข้าตาราง reports ซึ่งเชื่อมต่อไปยัง report_status_history">
+      <defs>
+        <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="20" y="26" width="180" height="76" rx="9"/>
+        <rect x="20" y="128" width="180" height="90" rx="9"/>
+        <rect x="20" y="244" width="180" height="76" rx="9"/>
+        <rect x="380" y="96" width="230" height="196" rx="9" stroke-width="2.5"/>
+        <rect x="760" y="120" width="180" height="90" rx="9"/>
+        <rect x="760" y="248" width="180" height="76" rx="9"/>
+      </g>
+      <g font-size="12.5" fill="currentColor">
+        <text x="34" y="50" font-weight="700">buildings</text>
+        <text x="34" y="70" font-size="10.5" opacity=".72">id · name</text>
+        <text x="34" y="86" font-size="10.5" opacity=".72">อาคารทั้งหมด</text>
+
+        <text x="34" y="152" font-weight="700">rooms</text>
+        <text x="34" y="172" font-size="10.5" opacity=".72">id · building_id · name · floor</text>
+        <text x="34" y="188" font-size="10.5" opacity=".72">unique(building_id, name)</text>
+        <text x="34" y="206" font-size="10.5" opacity=".72">กันห้องชื่อซ้ำในอาคารเดียว</text>
+
+        <text x="34" y="268" font-weight="700">service_types</text>
+        <text x="34" y="288" font-size="10.5" opacity=".72">id 1–5 · name</text>
+        <text x="34" y="304" font-size="10.5" opacity=".72">รหัสตรงระบบเดิม 1:1</text>
+
+        <text x="396" y="122" font-weight="700">reports</text>
+        <text x="396" y="142" font-size="10.5" opacity=".78">tracking_code (unique)</text>
+        <text x="396" y="159" font-size="10.5" opacity=".78">photo_path · status · urgency</text>
+        <text x="396" y="176" font-size="10.5" opacity=".78">service_type_id · assigned_to</text>
+        <text x="396" y="196" font-size="10.5" fill="#0d7a5f" font-weight="600">ai_suggested_* (แช่แข็ง)</text>
+        <text x="396" y="213" font-size="10.5" opacity=".78">ai_confidence · submit_seconds</text>
+        <text x="396" y="230" font-size="10.5" opacity=".78">satisfaction_rating · rated_at</text>
+        <text x="396" y="250" font-size="10.5" opacity=".78">created_at · resolved_at</text>
+        <text x="396" y="270" font-size="10.5" opacity=".78">contact_phone · reporter_name</text>
+
+        <text x="774" y="146" font-weight="700">staff</text>
+        <text x="774" y="166" font-size="10.5" opacity=".72">id → auth.users</text>
+        <text x="774" y="182" font-size="10.5" opacity=".72">full_name</text>
+        <text x="774" y="200" font-size="10.5" opacity=".72">ใช้เป็นด่านสิทธิ์ทั้งระบบ</text>
+
+        <text x="774" y="272" font-weight="700">report_status_history</text>
+        <text x="774" y="292" font-size="10.5" opacity=".72">report_id · status · changed_at</text>
+        <text x="774" y="310" font-size="10.5" opacity=".72">เขียนด้วย trigger เท่านั้น</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#a5)">
+        <line x1="200" y1="64" x2="376" y2="130"/>
+        <line x1="200" y1="173" x2="376" y2="173"/>
+        <line x1="200" y1="282" x2="376" y2="220"/>
+        <line x1="200" y1="140" x2="200" y2="140"/>
+        <line x1="610" y1="150" x2="756" y2="165"/>
+        <line x1="610" y1="250" x2="756" y2="272"/>
+      </g>
+      <g font-size="10.5" fill="currentColor" opacity=".85">
+        <text x="212" y="90">1 : N</text>
+        <text x="270" y="166">1 : N</text>
+        <text x="212" y="262">1 : N</text>
+        <text x="630" y="142">มอบหมาย / ปิดงาน / แก้ข้อมูล</text>
+        <text x="630" y="268">1 : N</text>
+      </g>
+      <path d="M112 102 L112 128" stroke="currentColor" stroke-width="1.5" marker-end="url(#a5)"/>
+      <text x="120" y="120" font-size="10.5" fill="currentColor" opacity=".85">1 : N</text>
+    </svg>
+    <figcaption><strong>การตัดสินใจที่สำคัญที่สุดในผังนี้</strong> คือช่องสีเขียว <code>ai_suggested_*</code> —
+    เก็บคำทายดั้งเดิมของ AI แยกจากค่าที่เจ้าหน้าที่แก้ได้ ถ้าเก็บช่องเดียว การแก้ทับจะทำให้
+    วัดความแม่นยำของ AI ย้อนหลังไม่ได้เลย ซึ่งเป็นตัวชี้วัดหลักของงานวิจัย</figcaption>
+  </figure>
+</section>
+
+<!-- 6 · AI logic -->
+<section class="slide">
+  <p class="kicker">AI Logic</p>
+  <h2>AI ตัดสินใจอย่างไร และบังคับให้ตอบเป็นโครงสร้างได้อย่างไร</h2>
+  <figure>
+    <svg viewBox="0 0 960 340" role="img" aria-label="ผังการตัดสินใจของ AI: ส่งภาพพร้อมบังคับเรียกเครื่องมือ ถ้าสำเร็จตรวจสอบค่าแล้วเก็บสองชุด ถ้าล้มเหลวคืนค่าว่างและยังสร้างใบแจ้งซ่อม">
+      <defs>
+        <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="16" y="128" width="150" height="72" rx="9"/>
+        <rect x="228" y="118" width="180" height="92" rx="9" stroke-width="2.5"/>
+        <rect x="470" y="26" width="200" height="86" rx="9"/>
+        <rect x="470" y="216" width="200" height="86" rx="9" stroke="#b45309" stroke-dasharray="5 3"/>
+        <rect x="730" y="26" width="214" height="86" rx="9" stroke="#0d7a5f" stroke-width="2.5"/>
+        <rect x="730" y="216" width="214" height="86" rx="9"/>
+      </g>
+      <g font-size="12.5" fill="currentColor">
+        <text x="91" y="158" text-anchor="middle" font-weight="700">รูปถ่าย</text>
+        <text x="91" y="178" text-anchor="middle" font-size="10.5" opacity=".72">base64</text>
+        <text x="318" y="150" text-anchor="middle" font-weight="700">Vision LLM</text>
+        <text x="318" y="170" text-anchor="middle" font-size="10.5" opacity=".78">tool_choice บังคับ</text>
+        <text x="318" y="188" text-anchor="middle" font-size="10.5" opacity=".78">ตอบเป็น JSON เท่านั้น</text>
+
+        <text x="570" y="52" text-anchor="middle" font-weight="700">ตรวจค่าที่ได้</text>
+        <text x="570" y="72" text-anchor="middle" font-size="10.5" opacity=".78">หมวดต้องอยู่ 1–5</text>
+        <text x="570" y="90" text-anchor="middle" font-size="10.5" opacity=".78">ความมั่นใจบีบเข้า 0–1</text>
+
+        <text x="570" y="242" text-anchor="middle" font-weight="700" fill="#b45309">ล้ม / ไม่มีคีย์</text>
+        <text x="570" y="262" text-anchor="middle" font-size="10.5" fill="#b45309">คืน null · เขียน log</text>
+        <text x="570" y="280" text-anchor="middle" font-size="10.5" fill="#b45309">ไม่โยน error ขึ้นไป</text>
+
+        <text x="837" y="52" text-anchor="middle" font-weight="700" fill="#0d7a5f">เก็บ 2 ชุด</text>
+        <text x="837" y="72" text-anchor="middle" font-size="10.5" fill="#0d7a5f">ai_suggested_* = แช่แข็ง</text>
+        <text x="837" y="90" text-anchor="middle" font-size="10.5" fill="#0d7a5f">ค่าใช้งาน = เจ้าหน้าที่แก้ได้</text>
+
+        <text x="837" y="248" text-anchor="middle" font-weight="700">ใบยังถูกสร้าง</text>
+        <text x="837" y="268" text-anchor="middle" font-size="10.5" opacity=".78">ช่อง AI ว่าง</text>
+        <text x="837" y="286" text-anchor="middle" font-size="10.5" opacity=".78">เจ้าหน้าที่จัดหมวดเอง</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#a6)">
+        <line x1="166" y1="164" x2="224" y2="164"/>
+        <line x1="408" y1="150" x2="466" y2="86"/>
+        <line x1="670" y1="69" x2="726" y2="69"/>
+        <line x1="670" y1="259" x2="726" y2="259"/>
+      </g>
+      <line x1="408" y1="180" x2="466" y2="248" stroke="#b45309" stroke-width="1.6" fill="none" marker-end="url(#a6)"/>
+      <g font-size="11" fill="currentColor">
+        <text x="418" y="106" font-weight="600">สำเร็จ</text>
+        <text x="418" y="232" fill="#b45309" font-weight="600">ล้มเหลว</text>
+      </g>
+    </svg>
+    <figcaption>ระบบไม่ขอให้ AI "เขียนบรรยาย" แล้วมาแกะข้อความ — แต่ประกาศ schema ของเครื่องมือไว้ล่วงหน้า
+    แล้วบังคับให้เรียกเครื่องมือนั้น (<code>tool_choice</code>) คำตอบจึงมาเป็นฟิลด์ที่ตรวจสอบได้ทันที
+    และยังตรวจซ้ำอีกชั้นในโค้ดก่อนเชื่อ</figcaption>
+  </figure>
+</section>
+
+<!-- 7 · Tool schema -->
+<section class="slide">
+  <p class="kicker">AI Logic</p>
+  <h2>สัญญาระหว่างโค้ดกับ AI (Tool Schema)</h2>
+  <div class="grid cols2" style="flex:1; align-content:center">
+    <div>
+      <pre><span class="c">// โครงสร้างที่บังคับให้ AI ตอบกลับ</span>
+{
+  <span class="k">equipmentType</span>: <span class="s">"เครื่องปรับอากาศ"</span>,
+  <span class="k">description</span>:   <span class="s">"มีน้ำรั่วซึมที่หน้ากากแอร์"</span>,
+  <span class="k">confidence</span>:    0.92,        <span class="c">// 0–1</span>
+  <span class="k">serviceTypeId</span>: 3,           <span class="c">// enum 1–5</span>
+  <span class="k">urgency</span>:       <span class="s">"high"</span>      <span class="c">// 4 ระดับ</span>
+}</pre>
+      <p class="sub" style="margin-top:.9rem">ทุกฟิลด์เป็น <code>required</code> และสองฟิลด์ท้ายเป็น
+      <code>enum</code> — AI จึงเลือกได้เฉพาะค่าที่ระบบรู้จัก ไม่มีทางคืนหมวดที่ไม่มีอยู่</p>
+    </div>
+    <div class="grid" style="gap:.85rem">
+      <div class="card">
+        <h3>การจำแนกหมวด (5 ประเภท)</h3>
+        <p>สุขาภิบาล · ไฟฟ้า · เครื่องปรับอากาศ · อาคาร · ครุภัณฑ์สำนักงาน
+        — คำอธิบายในสคีมาบอกตัวอย่างของแต่ละหมวดให้ AI เทียบ เช่น "ประปา ท่อ สุขภัณฑ์" คู่กับหมวด 1</p>
+      </div>
+      <div class="card">
+        <h3>เกณฑ์ความเร่งด่วน</h3>
+        <p><strong>critical</strong> อันตราย/กระทบวงกว้าง (ไฟลัดวงจร น้ำท่วม) ·
+        <strong>high</strong> ใช้งานไม่ได้เลย · <strong>medium</strong> ใช้ได้บางส่วน ·
+        <strong>low</strong> เสียหายเล็กน้อย/ความสวยงาม</p>
+      </div>
+      <div class="card">
+        <h3>ตรวจซ้ำในโค้ด</h3>
+        <p>ชนิดข้อมูลต้องถูก · หมวดต้องอยู่ 1–5 · ความมั่นใจถูกบีบเข้า 0–1 ·
+        ความด่วนต้องอยู่ในลิสต์ ไม่ผ่านข้อใดข้อหนึ่ง = ทิ้งค่านั้นเป็น null</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · measuring AI -->
+<section class="slide">
+  <p class="kicker">Measurement</p>
+  <h2>วัดความแม่นยำของ AI ได้อย่างไร</h2>
+  <figure>
+    <svg viewBox="0 0 960 250" role="img" aria-label="แผนภาพเปรียบเทียบ: ออกแบบเดิมเก็บช่องเดียวทำให้คำทายเดิมหาย ออกแบบใหม่เก็บสองช่องจึงเทียบกันได้">
+      <defs>
+        <marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <text x="20" y="24" font-size="13" fill="#b91c1c" font-weight="700">ออกแบบเดิม — วัดไม่ได้</text>
+      <g fill="none" stroke="#b91c1c" stroke-width="1.5">
+        <rect x="20" y="38" width="150" height="52" rx="8"/>
+        <rect x="280" y="38" width="150" height="52" rx="8"/>
+      </g>
+      <text x="95" y="60" font-size="11" fill="currentColor" text-anchor="middle">AI ทาย: หมวด 2</text>
+      <text x="95" y="78" font-size="11" fill="currentColor" text-anchor="middle">urgency = high</text>
+      <text x="355" y="60" font-size="11" fill="currentColor" text-anchor="middle">หมวด 3</text>
+      <text x="355" y="78" font-size="11" fill="currentColor" text-anchor="middle">urgency = medium</text>
+      <line x1="170" y1="64" x2="276" y2="64" stroke="#b91c1c" stroke-width="1.6" marker-end="url(#a8)"/>
+      <text x="223" y="56" font-size="10.5" fill="#b91c1c" text-anchor="middle">เจ้าหน้าที่แก้</text>
+      <text x="223" y="84" font-size="10.5" fill="#b91c1c" text-anchor="middle">ทับช่องเดิม</text>
+      <text x="450" y="70" font-size="11.5" fill="#b91c1c" font-weight="600">คำทายเดิมหายถาวร → เทียบไม่ได้</text>
+
+      <text x="20" y="140" font-size="13" fill="#0d7a5f" font-weight="700">ออกแบบที่ใช้จริง — วัดได้</text>
+      <g fill="none" stroke="#0d7a5f" stroke-width="1.5">
+        <rect x="20" y="154" width="150" height="52" rx="8"/>
+        <rect x="280" y="154" width="150" height="52" rx="8"/>
+        <rect x="560" y="154" width="240" height="52" rx="8" stroke-width="2.5"/>
+      </g>
+      <text x="95" y="176" font-size="11" fill="currentColor" text-anchor="middle" font-weight="600">ai_suggested_*</text>
+      <text x="95" y="194" font-size="10.5" fill="currentColor" text-anchor="middle">เขียนครั้งเดียว ห้ามแก้</text>
+      <text x="355" y="176" font-size="11" fill="currentColor" text-anchor="middle" font-weight="600">ค่าใช้งานจริง</text>
+      <text x="355" y="194" font-size="10.5" fill="currentColor" text-anchor="middle">เจ้าหน้าที่แก้ได้อิสระ</text>
+      <text x="680" y="176" font-size="11.5" fill="#0d7a5f" text-anchor="middle" font-weight="700">เท่ากัน = AI ทายถูก</text>
+      <text x="680" y="194" font-size="10.5" fill="currentColor" text-anchor="middle">นับรวม = ความแม่นยำ %</text>
+      <line x1="170" y1="180" x2="276" y2="180" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <line x1="430" y1="180" x2="556" y2="180" stroke="#0d7a5f" stroke-width="1.6" marker-end="url(#a8)"/>
+      <text x="223" y="172" font-size="10.5" fill="currentColor" text-anchor="middle" opacity=".8">อยู่คู่กัน</text>
+      <text x="493" y="172" font-size="10.5" fill="#0d7a5f" text-anchor="middle">เทียบ</text>
+    </svg>
+    <figcaption>ฟังก์ชัน <code>research_metrics()</code> คำนวณให้ในคำสั่งเดียว: ความแม่นยำจัดหมวด ·
+    ความแม่นยำประเมินความด่วน · เวลาเฉลี่ยที่ใช้แจ้ง · คะแนนความพึงพอใจ
+    ทั้งสี่ตัวแสดงอยู่หัวหน้าสรุปข้อมูล เทียบกับเป้าที่ตั้งไว้พร้อมป้ายผ่าน/ไม่ผ่าน</figcaption>
+  </figure>
+</section>
+
+<!-- 9 · Security -->
+<section class="slide">
+  <p class="kicker">Security Model</p>
+  <h2>ใครทำอะไรได้ — บังคับที่ชั้นฐานข้อมูล ไม่ใช่แค่ซ่อนปุ่ม</h2>
+  <table>
+    <tr><th style="width:22%">ตาราง / ทรัพยากร</th><th style="width:26%">คนทั่วไป (anon)</th><th>เจ้าหน้าที่ (ล็อกอิน)</th></tr>
+    <tr><td><strong>reports</strong></td><td>เพิ่มได้เท่านั้น — และถูกบังคับให้ <code>status='pending'</code>, ห้ามตั้งผู้รับผิดชอบ/คะแนนเอง</td><td>อ่าน · แก้สถานะ · มอบหมาย · แก้หมวดที่ AI ทายผิด</td></tr>
+    <tr><td><strong>buildings / rooms / service_types</strong></td><td>อ่านได้ (ต้องใช้ทำ dropdown)</td><td>อ่าน + จัดการรายการ</td></tr>
+    <tr><td><strong>staff</strong></td><td>เข้าไม่ถึงเลย</td><td>อ่านรายชื่อเพื่อมอบหมายงาน</td></tr>
+    <tr><td><strong>report_status_history</strong></td><td>เข้าไม่ถึงเลย</td><td>อ่าน (เขียนได้เฉพาะ trigger)</td></tr>
+    <tr><td><strong>รูปถ่าย (Storage)</strong></td><td>อัปโหลดได้ · <strong>ดูของคนอื่นไม่ได้</strong></td><td>ดูผ่าน signed URL อายุ 1 ชม.</td></tr>
+    <tr><td><strong>ติดตามสถานะ</strong></td><td>ดูได้เฉพาะใบที่ถือรหัส 6 หลัก — และคืนเฉพาะฟิลด์ปลอดภัย ไม่มีชื่อ/เบอร์/รูป</td><td>เห็นทั้งหมดในแดชบอร์ด</td></tr>
+  </table>
+  <div class="grid cols2">
+    <div class="card">
+      <h3>ทำไมไม่พึ่ง UI</h3>
+      <p>ทุกข้อในตารางนี้เป็น Row Level Security ในฐานข้อมูล ถ้ามีคนยิง API ตรงข้ามหน้าเว็บ
+      กฎยังบังคับอยู่เหมือนเดิม — การซ่อนปุ่มไม่ใช่ความปลอดภัย</p>
+    </div>
+    <div class="card">
+      <h3>บทเรียนจากการทดสอบจริง</h3>
+      <p>นโยบายรุ่นแรกเช็คสิทธิ์โดย query ตาราง <code>staff</code> ตรง ๆ ทำให้เกิด
+      <strong>infinite recursion</strong> — อ่านข้อมูลไม่ได้เลยทั้งระบบ
+      แก้ด้วยฟังก์ชัน <code>is_staff()</code> แบบ SECURITY DEFINER พบจากการยิงทดสอบของจริง ไม่ใช่จากการอ่านโค้ด</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · SLA -->
+<section class="slide">
+  <p class="kicker">Service Level</p>
+  <h2>SLA — งานไม่ด่วนเท่ากัน เส้นตายจึงไม่ควรเท่ากัน</h2>
+  <figure>
+    <svg viewBox="0 0 960 250" role="img" aria-label="แถบเวลาแสดงกำหนด SLA สี่ระดับ: วิกฤต 4 ชั่วโมง ด่วน 24 ชั่วโมง ปานกลาง 3 วัน ไม่เร่งด่วน 7 วัน พร้อมโซนเตือนช่วงท้าย">
+      <g font-size="12" fill="currentColor">
+        <text x="20" y="42" font-weight="700">วิกฤต</text>
+        <text x="20" y="92" font-weight="700">ด่วน</text>
+        <text x="20" y="142" font-weight="700">ปานกลาง</text>
+        <text x="20" y="192" font-weight="700">ไม่เร่งด่วน</text>
+      </g>
+      <g>
+        <rect x="130" y="26" width="120" height="22" rx="5" fill="#0d7a5f" opacity=".22"/>
+        <rect x="220" y="26" width="30" height="22" rx="5" fill="#b45309" opacity=".45"/>
+        <rect x="130" y="76" width="260" height="22" rx="5" fill="#0d7a5f" opacity=".22"/>
+        <rect x="325" y="76" width="65" height="22" rx="5" fill="#b45309" opacity=".45"/>
+        <rect x="130" y="126" width="480" height="22" rx="5" fill="#0d7a5f" opacity=".22"/>
+        <rect x="490" y="126" width="120" height="22" rx="5" fill="#b45309" opacity=".45"/>
+        <rect x="130" y="176" width="780" height="22" rx="5" fill="#0d7a5f" opacity=".22"/>
+        <rect x="715" y="176" width="195" height="22" rx="5" fill="#b45309" opacity=".45"/>
+      </g>
+      <g font-size="11.5" fill="currentColor" font-weight="600">
+        <text x="258" y="42">4 ชม.</text>
+        <text x="398" y="92">24 ชม.</text>
+        <text x="618" y="142">3 วัน</text>
+        <text x="918" y="192">7 วัน</text>
+      </g>
+      <g font-size="11" fill="#b45309">
+        <text x="130" y="228" font-weight="600">โซนส้ม = เหลือเวลาไม่ถึง 25% → การ์ดขึ้นป้ายเตือนอัตโนมัติ</text>
+      </g>
+      <text x="560" y="228" font-size="11" fill="#b91c1c" font-weight="600">เกินเส้นตาย → ป้ายแดง "เกิน SLA" + นับเข้าตัวเลข KPI</text>
+    </svg>
+    <figcaption>เวลาที่เหลือคำนวณจาก <code>created_at</code> + ชั่วโมงตามความด่วน งานที่ปิดแล้ววัดจาก
+    <code>resolved_at</code> เทียบเส้นตาย จึงได้ตัวเลข <strong>% ทันกำหนด</strong> ที่หน้าสรุป
+    ใบที่ AI ยังไม่ประเมินความด่วนใช้เกณฑ์ปานกลางเป็นค่าตั้งต้น</figcaption>
+  </figure>
+</section>
+
+<!-- 11 · Realtime -->
+<section class="slide">
+  <p class="kicker">Realtime</p>
+  <h2>ทำไมทุกจอเปลี่ยนพร้อมกันได้</h2>
+  <div class="grid cols2" style="flex:1; align-content:center">
+    <div class="card">
+      <h3>กลไก</h3>
+      <ul>
+        <li>ตาราง <code>reports</code> ถูกใส่ใน publication ของ Realtime</li>
+        <li>แดชบอร์ดสมัครฟังเหตุการณ์ <code>INSERT</code> และ <code>UPDATE</code></li>
+        <li>มีใบใหม่ → การ์ดแทรกขึ้นหัวรายการ + toast เตือนทันที</li>
+        <li>สถานะเปลี่ยน → การ์ดใบนั้นอัปเดตในที่</li>
+        <li>ออกจากหน้า → ยกเลิกการสมัครฟัง (ไม่ค้างเป็น memory leak)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Optimistic update</h3>
+      <p>กดปุ่มแล้ว UI เปลี่ยนทันทีก่อนเซิร์ฟเวอร์ตอบ — ช่างไม่ต้องรอ
+      ถ้าเซิร์ฟเวอร์ปฏิเสธ สถานะจะถูกดึงกลับเป็นค่าเดิม
+      และข้อความจาก Realtime เป็นตัวตัดสินสุดท้ายเสมอ</p>
+      <h3 style="margin-top:.9rem">ผลที่ผู้ใช้รู้สึก</h3>
+      <p>เจ้าหน้าที่ 5 คนเปิดพร้อมกัน คนหนึ่งกดปิดงาน อีก 4 จอเห็นทันทีโดยไม่ต้องรีเฟรช —
+      แก้ปัญหางานซ้ำซ้อนที่ระบบเดิมต้องโทรถามกันเอง</p>
+    </div>
+  </div>
+  <p class="sub"><strong>ข้อจำกัดที่ควรรู้:</strong> Realtime เป็นการแจ้งเหตุการณ์ ไม่ใช่แหล่งความจริง —
+  หน้าเว็บยังโหลดข้อมูลตั้งต้นจากฐานข้อมูลทุกครั้งที่เปิด ถ้าเน็ตหลุดกลางทางแล้วต่อกลับ
+  การรีเฟรชจึงยังให้ภาพที่ถูกต้อง</p>
+</section>
+
+<!-- 12 · Stack -->
+<section class="slide">
+  <p class="kicker">Technology</p>
+  <h2>เครื่องมือที่ใช้ และเหตุผลที่เลือก</h2>
+  <div class="grid cols3" style="flex:1; align-content:center">
+    <div class="card">
+      <h3>Next.js 16 (App Router)</h3>
+      <p>หน้าเว็บและ API อยู่โปรเจกต์เดียว — <strong>Server Actions</strong> ทำให้ฟอร์มส่งตรงถึงเซิร์ฟเวอร์
+      โดยไม่ต้องเขียน REST endpoint แยก และคีย์ทั้งหมดอยู่ฝั่งเซิร์ฟเวอร์โดยธรรมชาติ</p>
+    </div>
+    <div class="card">
+      <h3>Supabase (PostgreSQL)</h3>
+      <p>ได้ฐานข้อมูล + ล็อกอิน + ที่เก็บไฟล์ + Realtime ในบริการเดียว
+      และที่สำคัญคือได้ <strong>RLS</strong> ซึ่งบังคับสิทธิ์ที่ชั้นข้อมูลจริง</p>
+    </div>
+    <div class="card">
+      <h3>Vision LLM + Structured Output</h3>
+      <p>ใช้ความสามารถบังคับรูปแบบคำตอบ (tool schema) แทนการแกะข้อความ —
+      ลดความเปราะของ prompt และตรวจสอบค่าได้ทันที</p>
+    </div>
+    <div class="card">
+      <h3>Tailwind + shadcn/ui</h3>
+      <p>คอมโพเนนต์มาตรฐานเดียวกันทั้งแอป รองรับคีย์บอร์ดและ screen reader
+      ทำให้หน้าตาสม่ำเสมอโดยไม่ต้องเขียน CSS ซ้ำ</p>
+    </div>
+    <div class="card">
+      <h3>Vercel</h3>
+      <p>push ขึ้น <code>main</code> แล้ว deploy อัตโนมัติ ใช้ได้ฟรีในระดับโครงงาน
+      และรองรับ Server Actions ของ Next.js โดยตรง</p>
+    </div>
+    <div class="card">
+      <h3>IBM Plex Sans Thai</h3>
+      <p>ฟอนต์ไทยที่อ่านตัวเลขและอักษรผสมได้ชัด พร้อม fallback ถึงฟอนต์ระบบของ
+      Windows / macOS / Android จึงไม่มีอักษรกล่องบนเครื่องใดเครื่องหนึ่ง</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · Summary -->
+<section class="slide">
+  <p class="kicker">Summary</p>
+  <h2>สามการตัดสินใจที่ทำให้ระบบนี้ต่างจากงานทั่วไป</h2>
+  <div class="grid cols3" style="flex:1; align-content:center">
+    <div class="card">
+      <h3>1 · ระบบต้องรับแจ้งได้เสมอ</h3>
+      <p>AI เป็นตัวช่วย ไม่ใช่เงื่อนไข ถ้า AI ล่ม หมด quota หรือไม่มีคีย์
+      ใบแจ้งซ่อมยังเข้าระบบครบ — เพราะสิ่งที่ผู้ใช้ต้องการคือให้ช่างมาซ่อม ไม่ใช่ให้ AI ทำงาน</p>
+    </div>
+    <div class="card">
+      <h3>2 · เก็บข้อมูลที่ย้อนกลับไปเก็บไม่ได้</h3>
+      <p>คำทายเดิมของ AI · เวลาที่ใช้กรอกฟอร์ม · คะแนนความพึงพอใจ
+      ทั้งสามอย่างถ้าไม่เก็บตอนนั้นก็หายตลอดไป และเป็นตัวชี้วัดทั้งหมดของงานวิจัย</p>
+    </div>
+    <div class="card">
+      <h3>3 · สิทธิ์บังคับที่ฐานข้อมูล</h3>
+      <p>คนทั่วไปแจ้งซ่อมได้แต่อ่านข้อมูลคนอื่นไม่ได้ — บังคับด้วย RLS
+      ไม่ใช่ด้วยการซ่อนปุ่มบนหน้าเว็บ ทดสอบแล้วด้วยการยิง API ตรง</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>สิ่งที่ต่อยอดได้ต่อจากนี้</h3>
+    <p>แจ้งเตือนกลับผู้แจ้งผ่าน LINE/อีเมล · QR ประจำห้องเพื่อลดเหลือขั้นตอนเดียว ·
+    รูปหลังซ่อมเป็นหลักฐาน · ทะเบียนครุภัณฑ์เพื่อตอบว่าอุปกรณ์ไหนควรเปลี่ยนแทนซ่อม ·
+    ความเห็นในใบงานเพื่อลดการโทร</p>
+  </div>
+</section>
+
+<div class="footer">
+  <span>← → เปลี่ยนสไลด์ · คลิกครึ่งซ้าย/ขวา · Ctrl+P บันทึกเป็น PDF</span>
+  <span id="counter"></span>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const counter = document.getElementById("counter");
+  let i = 0;
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+    counter.textContent = (i + 1) + " / " + slides.length;
+  }
+  document.addEventListener("keydown", (e) => {
+    if (["ArrowRight", " ", "PageDown"].includes(e.key)) show(i + 1);
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+  });
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("a")) return;
+    show(e.clientX > innerWidth / 2 ? i + 1 : i - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>
