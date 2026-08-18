@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { submitReport, type SubmitReportState } from "@/app/report/actions";
+import { compressImage } from "@/lib/compress-image";
 import { DuplicateNotice } from "@/components/report/duplicate-notice";
 import type { Database } from "@/lib/supabase/types";
 
@@ -169,9 +170,22 @@ export function ReportForm({
           capture="environment"
           required
           className="sr-only"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            setPreview(file ? URL.createObjectURL(file) : null);
+          onChange={async (event) => {
+            const input = event.currentTarget;
+            const file = input.files?.[0];
+            if (!file) {
+              setPreview(null);
+              return;
+            }
+            setPreview(URL.createObjectURL(file));
+            // ย่อรูปก่อน แล้วสลับไฟล์ใน input เพื่อให้ FormData ส่งตัวที่เล็กแล้ว
+            const compressed = await compressImage(file);
+            if (compressed !== file) {
+              const dt = new DataTransfer();
+              dt.items.add(compressed);
+              input.files = dt.files;
+              setPreview(URL.createObjectURL(compressed));
+            }
           }}
         />
       </div>
