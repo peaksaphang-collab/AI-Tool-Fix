@@ -80,6 +80,7 @@ revoke all on function rate_report(text, smallint, text) from public;
 grant execute on function rate_report(text, smallint, text) to anon, authenticated;
 
 -- ── สรุปตัวชี้วัดงานวิจัยในที่เดียว (เจ้าหน้าที่เท่านั้น) ──
+-- ใช้ plpgsql เพื่อบังคับสิทธิ์: ผู้ล็อกอินที่ไม่ใช่ staff เรียกไม่ได้
 create or replace function research_metrics()
 returns table (
   ai_analyzed bigint,
@@ -91,11 +92,16 @@ returns table (
   rated_count bigint,
   avg_satisfaction numeric
 )
-language sql
+language plpgsql
 security definer
 stable
 set search_path = public
 as $$
+begin
+  if not is_staff() then
+    raise exception 'not authorized';
+  end if;
+  return query
   select
     count(*) filter (where ai_suggested_service_type_id is not null) as ai_analyzed,
     count(*) filter (
@@ -124,6 +130,7 @@ as $$
     round(avg(satisfaction_rating) filter (where satisfaction_rating is not null), 2)
       as avg_satisfaction
   from reports;
+end;
 $$;
 
 revoke all on function research_metrics() from public;
@@ -142,6 +149,12 @@ create policy "anyone can submit a report"
     and satisfaction_rating is null
     and rated_at is null
     and corrected_at is null
+    and corrected_by is null
+    and satisfaction_comment is null
+    -- กันคนนอกยิง REST ตั้งคำทาย AI เอง (จะปั่นตัวเลขความแม่นยำใน research_metrics ให้ปลอมได้)
+    and (ai_suggested_urgency is null or ai_suggested_urgency in ('critical','high','medium','low'))
+    and (ai_suggested_service_type_id is null or ai_suggested_service_type_id between 1 and 5)
+    and (submit_seconds is null or submit_seconds between 0 and 7200)
     and (tracking_code is null or tracking_code ~ '^[A-Z0-9]{6}$')
     and (reporter_name is null or char_length(reporter_name) <= 100)
     and (contact_phone is null or char_length(contact_phone) <= 30)
@@ -150,3 +163,7 @@ create policy "anyone can submit a report"
     and (ai_suggested_equipment is null or char_length(ai_suggested_equipment) <= 100)
     and char_length(photo_path) <= 300
   );
+
+-- Finding #2: บังคับ PostgREST โหลด schema cache ใหม่ ไม่งั้นแอปจะเจอ PGRST204
+-- แล้วตัดคอลัมน์วิจัยทิ้งเงียบ ๆ ทั้งที่คอลัมน์มีจริงแล้ว
+notify pgrst, 'reload schema';
