@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Camera, ClipboardList, LogOut } from "lucide-react";
+import { BarChart3, Camera, ClipboardList, LogOut, MapPin } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { logout } from "./logout-action";
@@ -37,6 +37,12 @@ export default function DashboardLayout({
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             <BarChart3 /> สรุปข้อมูล
+          </Link>
+          <Link
+            href="/dashboard/places"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            <MapPin /> อาคาร/ห้อง
           </Link>
           <Link
             href="/report"
