@@ -58,10 +58,10 @@ export default async function Home() {
           <Image
             src="/logo.png"
             alt=""
-            width={667}
-            height={593}
+            width={512}
+            height={512}
             priority
-            className="h-auto w-52 rounded-2xl sm:w-60"
+            className="h-auto w-40 rounded-2xl sm:w-48"
           />
         </div>
 
@@ -158,6 +158,19 @@ export default async function Home() {
         สำหรับเจ้าหน้าที่ซ่อมบำรุง
         <ArrowRight className="size-3.5" />
       </Link>
+
+      <footer className="reveal mt-auto flex w-full max-w-3xl flex-col items-center gap-2.5 border-t pt-8 pb-2">
+        <Image
+          src="/psu-logo.png"
+          alt="มหาวิทยาลัยสงขลานครินทร์"
+          width={960}
+          height={252}
+          className="h-8 w-auto opacity-90 sm:h-9"
+        />
+        <p className="text-center text-xs text-muted-foreground">
+          วิทยาเขตสุราษฎร์ธานี · โครงงานพัฒนาระบบสารสนเทศ
+        </p>
+      </footer>
     </main>
   );
 }
