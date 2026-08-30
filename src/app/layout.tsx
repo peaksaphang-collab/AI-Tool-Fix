@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ระบบแจ้งซ่อม | Repair Notify System",
     description: "แจ้งซ่อมอุปกรณ์ด้วยรูปถ่าย ให้ AI วิเคราะห์ และติดตามสถานะแบบเรียลไทม์",
-    images: [{ url: "/logo.png", width: 667, height: 593 }],
+    images: [{ url: "/logo.png", width: 1200, height: 630 }],
     type: "website",
   },
 };
