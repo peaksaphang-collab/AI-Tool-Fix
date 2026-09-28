@@ -1,13 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { CheckCircle2, Clock, Loader2, Search, Wrench, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  History,
+  Loader2,
+  Search,
+  Wrench,
+  X,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lookupReport, type TrackResult } from "@/app/track/actions";
 import { RatingForm } from "@/components/track/rating-form";
+import {
+  clearReportHistory,
+  getReportHistory,
+  normalizeCode,
+  removeReportCode,
+  saveReportCode,
+  type SavedReport,
+} from "@/lib/report-history";
 
 const STEPS = [
   { key: "pending", label: "รับเรื่องแล้ว", icon: Clock },
@@ -25,20 +42,40 @@ export function TrackForm() {
   const [code, setCode] = useState("");
   const [result, setResult] = useState<TrackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<SavedReport[]>([]);
   const [pending, startTransition] = useTransition();
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
+  const runLookup = useCallback((value: string) => {
     startTransition(async () => {
-      const res = await lookupReport(code);
+      const res = await lookupReport(value);
       if (res.ok) {
         setResult(res.report);
         setError(null);
+        setHistory(saveReportCode(res.report.tracking_code));
       } else {
         setResult(null);
         setError(res.message);
       }
     });
+  }, []);
+
+  // อ่านรหัสจากลิงก์ที่ส่งมาจากหน้าแจ้งสำเร็จ แล้วค้นให้เลย
+  // ผู้แจ้งจะได้ไม่ต้องพิมพ์รหัสซ้ำเอง
+  useEffect(() => {
+    setHistory(getReportHistory());
+
+    const fromUrl = normalizeCode(
+      new URLSearchParams(window.location.search).get("code") ?? ""
+    );
+    if (fromUrl.length === 6) {
+      setCode(fromUrl);
+      runLookup(fromUrl);
+    }
+  }, [runLookup]);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    runLookup(code);
   }
 
   const cancelled = result?.status === "cannot_proceed";
@@ -144,6 +181,61 @@ export function TrackForm() {
             <RatingForm trackingCode={result.tracking_code} />
           )}
         </div>
+      )}
+
+      {history.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-1.5 text-sm font-medium">
+              <History className="size-4 text-primary" />
+              เรื่องที่เคยแจ้งจากเครื่องนี้ ({history.length})
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="press"
+              onClick={() => setHistory(clearReportHistory())}
+            >
+              ล้างทั้งหมด
+            </Button>
+          </div>
+
+          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+            {history.map((item) => (
+              <li key={item.code} className="flex items-center gap-2 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCode(item.code);
+                    runLookup(item.code);
+                  }}
+                  disabled={pending}
+                  className="flex flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1 text-left"
+                >
+                  <span className="font-mono text-base font-semibold tracking-[0.2em] text-primary">
+                    {item.code}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    บันทึกเมื่อ {format(new Date(item.savedAt), "d MMM yy", { locale: th })}
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`ลบรหัส ${item.code} ออกจากประวัติ`}
+                  onClick={() => setHistory(removeReportCode(item.code))}
+                >
+                  <X className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+
+          <p className="text-xs text-muted-foreground">
+            ประวัตินี้เก็บอยู่ในเครื่องนี้เท่านั้น ไม่ได้ส่งขึ้นระบบ
+            หากเปลี่ยนเครื่องหรือล้างข้อมูลเบราว์เซอร์ ให้ใช้รหัสติดตามค้นหาได้ตามปกติ
+          </p>
+        </section>
       )}
     </div>
   );

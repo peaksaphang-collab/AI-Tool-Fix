@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { submitReport, type SubmitReportState } from "@/app/report/actions";
 import { compressImage } from "@/lib/compress-image";
+import { saveReportCode } from "@/lib/report-history";
 import { DuplicateNotice } from "@/components/report/duplicate-notice";
 import type { Database } from "@/lib/supabase/types";
 
@@ -46,6 +47,13 @@ export function ReportForm({
   useEffect(() => {
     startedAtRef.current = Date.now();
   }, []);
+
+  // เก็บรหัสไว้ในเครื่องทันทีที่แจ้งสำเร็จ ผู้แจ้งที่ลืมรหัสจะยังกลับมาดูได้
+  useEffect(() => {
+    if (state.status === "success" && state.trackingCode) {
+      saveReportCode(state.trackingCode);
+    }
+  }, [state.status, state.trackingCode]);
 
   // Base UI แสดงค่าดิบใน trigger ถ้าไม่บอก mapping value → ป้ายชื่อ
   // ไม่มี items ผู้ใช้จะเห็น UUID แทนชื่ออาคาร/ห้อง
