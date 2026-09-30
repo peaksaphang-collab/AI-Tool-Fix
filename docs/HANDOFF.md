@@ -1,67 +1,68 @@
-# ขั้นตอนที่เหลือก่อนเปิดใช้งานจริง
+# ส่งมอบระบบ — สถานะ ณ 30 ก.ย. 2569
 
-> หมายเหตุ: repo นี้เป็นสาธารณะ — ห้าม commit คีย์ อีเมล หรือข้อมูลส่วนบุคคลลงไฟล์ใด ๆ
-> ค่าลับทั้งหมดอยู่ใน `.env.local` ซึ่งถูก gitignore ไว้แล้ว
+> repo นี้เป็นสาธารณะ ห้าม commit คีย์ อีเมล รหัสผ่าน หรือข้อมูลส่วนบุคคลลงไฟล์ใด ๆ
 
-## 1. ตั้งค่า environment (ทำครั้งเดียว)
+## สถานะปัจจุบัน
 
-```bash
-cp .env.local.example .env.local
-```
-
-เติมค่าใน `.env.local`:
-
-| ตัวแปร | หาได้จาก |
+| ส่วน | สถานะ |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard → Project Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ที่เดียวกัน → anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | ที่เดียวกัน → service_role (เก็บลับสุด ใช้ฝั่ง server เท่านั้น) |
-| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (ใช้วิเคราะห์รูป) |
+| เว็บใช้งานจริง | https://ai-tool-fix-two.vercel.app |
+| ฐานข้อมูล (Supabase) | ใช้งานได้ migration 0001–0010 รันครบ มีอาคารจริง 10 แห่ง ประเภทงาน 5 ประเภท |
+| แจ้งซ่อม / ติดตามสถานะ / ดูประวัติการแจ้ง | ใช้งานได้ |
+| แดชบอร์ดเจ้าหน้าที่ | ใช้งานได้ ต้องมีบัญชีเจ้าหน้าที่ก่อน (ข้อ 1) |
+| AI วิเคราะห์ภาพ | **ยังไม่ทำงาน** จนกว่าจะใส่ `ANTHROPIC_API_KEY` (ข้อ 2) ระหว่างนี้ใบแจ้งยังเข้าระบบได้ตามปกติ แต่ช่องผลวิเคราะห์จะว่าง |
+| กันฐานข้อมูลหยุดเอง | GitHub Actions `keep-alive` เปิดหน้าแจ้งซ่อมทุก 3 วัน (ข้อ 3) |
 
-## 2. รัน migration ใน Supabase SQL Editor (ตามลำดับ)
+## 1. สร้างบัญชีเจ้าหน้าที่
 
-1. `supabase/migrations/0001_init.sql` — ✅ รันแล้ว
-2. `supabase/migrations/0002_storage.sql` — ✅ รันแล้ว
-3. `supabase/migrations/0003_seed.sql` — ✅ รันแล้ว (อาคาร 4 / ห้อง 11 — แก้เป็นของจริงก่อนเปิดใช้)
-4. `supabase/migrations/0004_status_cannot_proceed.sql` — ✅ รันแล้ว
-5. `supabase/migrations/0005_service_types_and_fields.sql` — ✅ รันแล้ว (ประเภทงาน 5 แบบ)
-6. `supabase/migrations/0006_fix_rls_recursion.sql` — ✅ รันแล้ว (แก้ RLS recursion ด้วย `is_staff()`)
-7. `0007_security_hardening.sql` — ✅ รันแล้ว
-8. `0008_tracking_and_stats.sql` — ✅ รันแล้ว
-9. **`0009_research_metrics.sql` — ยังไม่ได้รัน** ← ค้างข้อเดียว
-   เปิด SQL Editor → วางทั้งไฟล์ → Run (มี `drop policy` ระบบจะถามยืนยัน กด Run query)
-   ระบบใช้งานได้ปกติแม้ยังไม่รัน แค่ยังไม่เก็บ KPI งานวิจัย
-
-> ตรวจแล้วด้วยข้อมูลจริง: REST คืน buildings 4 · rooms 11 · service_types 5,
-> ทดสอบส่งแจ้งซ่อม (อัปโหลดรูป 200 + insert 201) ผ่านสิทธิ์ anon สำเร็จ
-
-## 3. สร้างบัญชีเจ้าหน้าที่คนแรก
-
-1. Supabase Dashboard → Authentication → Users → **Add user** (อีเมล + รหัสผ่าน)
-2. copy UUID ของ user ที่สร้าง แล้วรันใน SQL Editor:
+1. Supabase Dashboard → Authentication → Users → **Add user** → **Create new user**
+2. ใส่อีเมลและรหัสผ่าน แล้ว**ติ๊ก Auto Confirm User** (ถ้าไม่ติ๊ก จะล็อกอินไม่ได้จนกว่าจะยืนยันอีเมล)
+3. SQL Editor → วางแล้วกด Run (แก้อีเมลและชื่อให้ตรง)
 
 ```sql
-insert into staff (id, full_name) values ('<UUID>', 'ชื่อเจ้าหน้าที่');
+insert into staff (id, full_name)
+select id, 'ชื่อเจ้าหน้าที่'
+from auth.users
+where email = 'อีเมลที่สร้างในข้อ 2'
+on conflict (id) do nothing;
 ```
 
-## 4. ทดสอบระบบ
+ถ้าล็อกอินไม่ได้ หน้าเข้าสู่ระบบจะบอกสาเหตุ: ไม่มีบัญชีหรือรหัสผิด / ยังไม่ยืนยันอีเมล / ยังไม่มีสิทธิ์เจ้าหน้าที่ (ยังไม่ได้รัน SQL ในขั้นที่ 3)
+
+## 2. เปิดใช้ AI วิเคราะห์ภาพ
+
+1. สมัคร Claude Console ที่ platform.claude.com
+2. Billing → เติมเครดิต ค่าใช้จ่ายประมาณ 0.01 ดอลลาร์ต่อใบแจ้ง (เติม 5 ดอลลาร์ใช้ได้ประมาณ 500 ใบ)
+3. Limits → ตั้งเพดานใช้จ่ายรายเดือน กันค่าใช้จ่ายบานปลาย
+4. API Keys → Create Key → คัดลอกเก็บไว้ (แสดงครั้งเดียว)
+5. ใส่คีย์ใน Vercel แล้ว deploy ใหม่ (ถ้าไม่ deploy ใหม่ คีย์จะไม่มีผล)
 
 ```bash
-npm install
-npm run dev
+npx vercel env add ANTHROPIC_API_KEY production
+npx vercel deploy --prod --yes
 ```
 
-- `/report` — แจ้งซ่อม (ถ่ายรูป → เลือกอาคาร/ห้อง → ส่ง)
-- `/login` → `/dashboard` — บอร์ดสถานะ (เปิด 2 จอเทสต์ realtime + toast แจ้งเตือน)
-- `/dashboard/analytics` — KPI / Kanban / Timeline / Heatmap / ปฏิทิน / สรุปรายวัน-เดือน-ปี
+โมเดลที่ใช้คือ `claude-sonnet-4-5` สถานะ Active ตามหน้า model deprecations ของ Anthropic (ประกาศล่วงหน้าอย่างน้อย 60 วันก่อนปิด)
 
-## 5. Deploy (Vercel)
+## 3. ฐานข้อมูลหยุดเอง (Supabase แพ็กเกจฟรี)
 
-1. vercel.com → Import repo นี้
-2. ใส่ env ทั้ง 4 ตัวจากข้อ 1 ใน Project Settings → Environment Variables
-3. Deploy — เสร็จแล้วทดสอบซ้ำตามข้อ 4 บนโดเมนจริง
+แพ็กเกจฟรีจะหยุดโปรเจกต์เมื่อไม่มีการใช้งานประมาณ 7 วัน อาการคือ เลือกอาคารไม่ได้ ติดตามสถานะขึ้น "ระบบขัดข้อง" และล็อกอินไม่ได้ พร้อมกันทั้งหมด
 
-## สไลด์นำเสนอ
+- ป้องกัน: workflow `.github/workflows/keep-alive.yml` เปิดหน้าแจ้งซ่อมทุก 3 วัน ถ้าฐานข้อมูลไม่ตอบ run จะขึ้นสีแดงและ GitHub ส่งอีเมลแจ้ง
+- แก้: Supabase Dashboard → เปิดโปรเจกต์ → **Restore project** รอประมาณ 3–5 นาทีกว่าข้อมูลจะกลับมา
+- GitHub จะปิด workflow ที่ตั้งเวลาไว้เองถ้า repo ไม่มี commit 60 วัน ถ้าจะใช้งานต่อหลังจากนั้นให้เปิดใหม่ที่แท็บ Actions
 
-`docs/slides.html` — เปิดในเบราว์เซอร์ได้เลย (11 หน้า, กด ←/→)
-ครอบคลุม Input→Process→Output, flow, AI logic, โครงสร้าง DB, เทคโนโลยีที่ใช้
+## 4. Deploy
+
+push ขึ้น `main` **ไม่ได้ deploy อัตโนมัติ** ต้องสั่งเอง
+
+```bash
+npx vercel deploy --prod --yes
+```
+
+## 5. ตรวจหลังแก้ไขทุกครั้ง
+
+- `/report` เห็นรายการอาคารครบ 10 แห่ง
+- `/track?code=ZZ9ZZ9` ต้องขึ้น "ไม่พบรหัสนี้" (ถ้าขึ้น "ระบบขัดข้อง" แปลว่าฐานข้อมูลไม่ตอบ)
+- ล็อกอินเจ้าหน้าที่แล้วเห็นแดชบอร์ด
+- แจ้งซ่อมทดสอบ 1 ใบ แล้วดูว่ามีผลวิเคราะห์จาก AI (เฉพาะหลังทำข้อ 2)
