@@ -10,11 +10,24 @@ export interface PublicReportStatus {
   status: ReportStatus;
   urgency: Urgency | null;
   building_name: string;
-  room_name: string;
+  room_name: string | null;
   service_type_name: string | null;
   equipment: string | null;
+  assignee_name: string | null;
   created_at: string;
   updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface PublicBoardRow {
+  created_at: string;
+  building_name: string;
+  location: string | null;
+  service_type_name: string | null;
+  equipment: string | null;
+  urgency: Urgency | null;
+  status: ReportStatus;
+  assignee_name: string | null;
   resolved_at: string | null;
 }
 
@@ -75,7 +88,8 @@ export interface Database {
         Row: {
           id: string;
           building_id: string;
-          room_id: string;
+          room_id: string | null;
+          location_detail: string | null;
           photo_path: string;
           reporter_name: string | null;
           ai_equipment_type: string | null;
@@ -104,7 +118,8 @@ export interface Database {
         Insert: {
           id?: string;
           building_id: string;
-          room_id: string;
+          room_id?: string | null;
+          location_detail?: string | null;
           photo_path: string;
           reporter_name?: string | null;
           ai_equipment_type?: string | null;
@@ -133,7 +148,8 @@ export interface Database {
         Update: {
           id?: string;
           building_id?: string;
-          room_id?: string;
+          room_id?: string | null;
+          location_detail?: string | null;
           photo_path?: string;
           reporter_name?: string | null;
           ai_equipment_type?: string | null;
@@ -225,6 +241,14 @@ export interface Database {
       public_repair_stats: {
         Args: Record<string, never>;
         Returns: { done_30d: number; open_now: number; avg_hours: number | null }[];
+      };
+      public_report_board: {
+        Args: { max_rows?: number };
+        Returns: PublicBoardRow[];
+      };
+      public_staff_names: {
+        Args: Record<string, never>;
+        Returns: { id: string; full_name: string }[];
       };
       public_open_count_for_room: {
         Args: { room: string };

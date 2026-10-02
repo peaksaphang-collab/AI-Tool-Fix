@@ -16,27 +16,24 @@ import {
 import { submitReport, type SubmitReportState } from "@/app/report/actions";
 import { compressImage } from "@/lib/compress-image";
 import { saveReportCode } from "@/lib/report-history";
-import { DuplicateNotice } from "@/components/report/duplicate-notice";
 import type { Database } from "@/lib/supabase/types";
 
 type Building = Database["public"]["Tables"]["buildings"]["Row"];
-type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
 
 const initialState: SubmitReportState = { status: "idle" };
 
 export function ReportForm({
   buildings,
-  rooms,
   serviceTypes,
+  staff,
 }: {
   buildings: Building[];
-  rooms: Room[];
   serviceTypes: ServiceType[];
+  staff: { id: string; full_name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(submitReport, initialState);
   const [buildingId, setBuildingId] = useState<string>("");
-  const [roomId, setRoomId] = useState<string>("");
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -61,21 +58,14 @@ export function ReportForm({
     () => Object.fromEntries(buildings.map((b) => [b.id, b.name])),
     [buildings]
   );
-  const roomItems = useMemo(
-    () =>
-      Object.fromEntries(
-        rooms.map((r) => [r.id, r.floor ? `${r.name} (ชั้น ${r.floor})` : r.name])
-      ),
-    [rooms]
-  );
   const serviceTypeItems = useMemo(
     () => Object.fromEntries(serviceTypes.map((t) => [String(t.id), t.name])),
     [serviceTypes]
   );
 
-  const roomsForBuilding = useMemo(
-    () => rooms.filter((room) => room.building_id === buildingId),
-    [rooms, buildingId]
+  const staffItems = useMemo(
+    () => Object.fromEntries(staff.map((s) => [s.id, s.full_name])),
+    [staff]
   );
 
   if (state.status === "success") {
@@ -204,10 +194,7 @@ export function ReportForm({
           name="buildingId"
           items={buildingItems}
           value={buildingId}
-          onValueChange={(value) => {
-            setBuildingId(value ?? "");
-            setRoomId("");
-          }}
+          onValueChange={(value) => setBuildingId(value ?? "")}
           required
         >
           <SelectTrigger id="buildingId" className="w-full">
@@ -224,28 +211,14 @@ export function ReportForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="roomId">ห้อง</Label>
-        <Select
-          name="roomId"
-          items={roomItems}
-          value={roomId}
-          onValueChange={(value) => setRoomId(value ?? "")}
-          disabled={!buildingId}
+        <Label htmlFor="locationDetail">ห้อง / จุดที่เสีย</Label>
+        <Input
+          id="locationDetail"
+          name="locationDetail"
           required
-        >
-          <SelectTrigger id="roomId" className="w-full">
-            <SelectValue placeholder={buildingId ? "เลือกห้อง" : "เลือกอาคารก่อน"} />
-          </SelectTrigger>
-          <SelectContent>
-            {roomsForBuilding.map((room) => (
-              <SelectItem key={room.id} value={room.id}>
-                {room.name}
-                {room.floor ? ` (ชั้น ${room.floor})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DuplicateNotice roomId={roomId} />
+          maxLength={200}
+          placeholder="เช่น ห้อง 2105 ชั้น 2, ห้องน้ำชายชั้น 1"
+        />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -264,11 +237,12 @@ export function ReportForm({
         </Select>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
+        <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
-          <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
-        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="contactPhone">เบอร์ติดต่อ (ไม่บังคับ)</Label>
           <Input
@@ -278,6 +252,23 @@ export function ReportForm({
             inputMode="tel"
             placeholder="เผื่อช่างติดต่อกลับ"
           />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="assignedTo">ผู้รับผิดชอบงาน (ไม่บังคับ)</Label>
+          <Select name="assignedTo" items={staffItems} disabled={staff.length === 0}>
+            <SelectTrigger id="assignedTo" className="w-full">
+              <SelectValue
+                placeholder={staff.length ? "ให้เจ้าหน้าที่มอบหมาย" : "ยังไม่มีรายชื่อ"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {staff.map((person) => (
+                <SelectItem key={person.id} value={person.id}>
+                  {person.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

@@ -87,7 +87,7 @@ export async function exportReportsCsv(): Promise<
       x.tracking_code,
       new Date(x.created_at).toLocaleString("th-TH"),
       b.get(x.building_id) ?? "",
-      r.get(x.room_id) ?? "",
+      x.location_detail?.trim() || (x.room_id ? r.get(x.room_id) ?? "" : ""),
       x.service_type_id ? t.get(x.service_type_id) ?? "" : "",
       x.ai_equipment_type,
       x.ai_description,

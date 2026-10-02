@@ -118,7 +118,8 @@ export function TrackForm() {
           <div>
             <p className="text-xs text-muted-foreground">รหัส {result.tracking_code}</p>
             <p className="text-lg font-semibold">
-              {result.building_name} · {result.room_name}
+              {result.building_name}
+              {result.room_name ? ` · ${result.room_name}` : ""}
             </p>
             {result.equipment && (
               <p className="text-sm text-muted-foreground">{result.equipment}</p>
@@ -163,6 +164,8 @@ export function TrackForm() {
           )}
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 border-t pt-3 text-xs">
+            <dt className="text-muted-foreground">ผู้รับผิดชอบงาน</dt>
+            <dd className="text-right">{result.assignee_name ?? "รอมอบหมาย"}</dd>
             <dt className="text-muted-foreground">แจ้งเมื่อ</dt>
             <dd className="text-right">
               {format(new Date(result.created_at), "d MMM yy HH:mm", { locale: th })}

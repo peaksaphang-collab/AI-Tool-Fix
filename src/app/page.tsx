@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Camera, Search, ArrowRight, Sparkles, BellRing, Wrench } from "lucide-react";
+import { Camera, Search, ArrowRight, Sparkles, BellRing, Wrench, Table2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/app/setup-required";
@@ -92,6 +92,16 @@ export default async function Home() {
             })}
           >
             <Search className="size-4" /> ติดตามสถานะที่แจ้งไว้
+          </Link>
+          <Link
+            href="/board"
+            className={buttonVariants({
+              variant: "ghost",
+              size: "lg",
+              className: "h-11 w-full press",
+            })}
+          >
+            <Table2 className="size-4" /> ตารางแจ้งซ่อมทั้งหมด
           </Link>
         </div>
 

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { assignReport, updateReportStatus } from "@/app/dashboard/actions";
 import { ReportCard } from "@/components/dashboard/report-card";
+import { locationOf } from "@/lib/location";
 import type { Database, ReportStatus, Urgency } from "@/lib/supabase/types";
 
 type Report = Database["public"]["Tables"]["reports"]["Row"];
@@ -71,8 +72,8 @@ export function DashboardClient({
       (report: Report): ReportWithLocation => ({
         ...report,
         buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบอาคาร",
-        roomName: roomById.get(report.room_id)?.name ?? "ไม่ทราบห้อง",
-        roomFloor: roomById.get(report.room_id)?.floor ?? null,
+        roomName: locationOf(report, roomById).name,
+        roomFloor: locationOf(report, roomById).floor,
         serviceTypeName: report.service_type_id
           ? serviceTypeById.get(report.service_type_id) ?? null
           : null,

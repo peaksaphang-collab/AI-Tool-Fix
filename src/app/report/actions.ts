@@ -30,7 +30,8 @@ export async function submitReport(
   formData: FormData
 ): Promise<SubmitReportState> {
   const buildingId = formData.get("buildingId");
-  const roomId = formData.get("roomId");
+  const locationRaw = formData.get("locationDetail");
+  const assignedRaw = formData.get("assignedTo");
   const reporterName = formData.get("reporterName");
   const contactPhone = formData.get("contactPhone");
   const serviceTypeRaw = formData.get("serviceTypeId");
@@ -40,8 +41,10 @@ export async function submitReport(
   if (typeof buildingId !== "string" || !buildingId) {
     return { status: "error", message: "กรุณาเลือกอาคาร" };
   }
-  if (typeof roomId !== "string" || !roomId) {
-    return { status: "error", message: "กรุณาเลือกห้อง" };
+  const locationDetail =
+    typeof locationRaw === "string" ? locationRaw.trim().slice(0, 200) : "";
+  if (!locationDetail) {
+    return { status: "error", message: "กรุณาระบุห้องหรือจุดที่เสีย" };
   }
   if (!(photo instanceof File) || photo.size === 0) {
     return { status: "error", message: "กรุณาถ่ายรูปหรือเลือกรูปภาพ" };
@@ -85,7 +88,13 @@ export async function submitReport(
 
   const baseRow = {
     building_id: buildingId,
-    room_id: roomId,
+    room_id: null,
+    location_detail: locationDetail,
+    // ผู้แจ้งเลือกได้ว่าจะให้ใครรับเรื่อง ฐานข้อมูลตรวจว่าเป็นเจ้าหน้าที่จริง (FK)
+    assigned_to:
+      typeof assignedRaw === "string" && /^[0-9a-f-]{36}$/i.test(assignedRaw)
+        ? assignedRaw
+        : null,
     photo_path: photoPath,
     reporter_name:
       typeof reporterName === "string" && reporterName.trim()
@@ -155,19 +164,3 @@ export async function submitReport(
     trackingCode,
   };
 }
-
-// เตือนแจ้งซ้ำ — นับใบที่ยังค้างในห้องเดียวกัน (ตัวเลขล้วน ไม่คืนข้อมูลใคร)
-export async function openCountForRoom(roomId: string): Promise<number> {
-  if (!roomId) return 0;
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc("public_open_count_for_room", {
-      room: roomId,
-    });
-    if (error) return 0;
-    return typeof data === "number" ? data : 0;
-  } catch {
-    return 0;
-  }
-}
-

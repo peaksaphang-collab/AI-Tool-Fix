@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { locationOf } from "@/lib/location";
 import { DashboardClient, type ReportWithLocation } from "@/components/dashboard/dashboard-client";
 import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
 
@@ -35,12 +36,12 @@ export default async function DashboardPage() {
   const staffById = new Map((staff ?? []).map((s) => [s.id, s.full_name]));
 
   const reportsWithLocation: ReportWithLocation[] = (reports ?? []).map((report) => {
-    const room = roomById.get(report.room_id);
+    const room = locationOf(report, roomById);
     return {
       ...report,
       buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบอาคาร",
-      roomName: room?.name ?? "ไม่ทราบห้อง",
-      roomFloor: room?.floor ?? null,
+      roomName: room.name,
+      roomFloor: room.floor,
       serviceTypeName: report.service_type_id
         ? serviceTypeById.get(report.service_type_id) ?? null
         : null,

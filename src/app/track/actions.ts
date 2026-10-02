@@ -7,9 +7,10 @@ export interface TrackResult {
   status: "pending" | "in_progress" | "done" | "cannot_proceed";
   urgency: string | null;
   building_name: string;
-  room_name: string;
+  room_name: string | null;
   service_type_name: string | null;
   equipment: string | null;
+  assignee_name?: string | null;
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
