@@ -160,6 +160,7 @@ export function DashboardClient({
           r.ai_equipment_type,
           r.ai_description,
           r.reporter_name,
+          r.reporter_code,
           r.contact_phone,
           r.assignedName,
         ]

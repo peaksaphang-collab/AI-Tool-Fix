@@ -188,7 +188,11 @@ export function ReportCard({
             แจ้งเมื่อ{" "}
             {formatDistanceToNow(createdAt, { addSuffix: true, locale: th })}
           </span>
-          {report.reporter_name ? ` · โดย ${report.reporter_name}` : ""}
+          {report.reporter_name
+            ? ` · โดย ${report.reporter_name}${report.reporter_code ? ` (${report.reporter_code})` : ""}`
+            : report.reporter_type === "external"
+              ? " · บุคคลภายนอก"
+              : ""}
           {report.contact_phone ? (
             <a
               href={`tel:${report.contact_phone.replace(/[^0-9+]/g, "")}`}

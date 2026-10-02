@@ -27,10 +27,12 @@ export function ReportForm({
   buildings,
   serviceTypes,
   staff,
+  reporterType,
 }: {
   buildings: Building[];
   serviceTypes: ServiceType[];
   staff: { id: string; full_name: string }[];
+  reporterType: "internal" | "external";
 }) {
   const [state, formAction, pending] = useActionState(submitReport, initialState);
   const [buildingId, setBuildingId] = useState<string>("");
@@ -237,10 +239,12 @@ export function ReportForm({
         </Select>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
-        <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
-      </div>
+      {reporterType === "external" && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="reporterName">ชื่อผู้แจ้ง (ไม่บังคับ)</Label>
+          <Input id="reporterName" name="reporterName" placeholder="ไม่ระบุก็ได้" />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">

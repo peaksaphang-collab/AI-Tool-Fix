@@ -92,6 +92,8 @@ export interface Database {
           location_detail: string | null;
           photo_path: string;
           reporter_name: string | null;
+          reporter_type: "internal" | "external" | null;
+          reporter_code: string | null;
           ai_equipment_type: string | null;
           ai_description: string | null;
           ai_confidence: number | null;
@@ -122,6 +124,8 @@ export interface Database {
           location_detail?: string | null;
           photo_path: string;
           reporter_name?: string | null;
+          reporter_type?: "internal" | "external" | null;
+          reporter_code?: string | null;
           ai_equipment_type?: string | null;
           ai_description?: string | null;
           ai_confidence?: number | null;
@@ -152,6 +156,8 @@ export interface Database {
           location_detail?: string | null;
           photo_path?: string;
           reporter_name?: string | null;
+          reporter_type?: "internal" | "external" | null;
+          reporter_code?: string | null;
           ai_equipment_type?: string | null;
           ai_description?: string | null;
           ai_confidence?: number | null;

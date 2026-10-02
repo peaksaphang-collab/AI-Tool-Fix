@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { analyzePhoto } from "@/lib/ai/analyze-photo";
+import { getReporter } from "@/lib/reporter";
 
 export interface SubmitReportState {
   status: "idle" | "success" | "error";
@@ -37,6 +38,11 @@ export async function submitReport(
   const serviceTypeRaw = formData.get("serviceTypeId");
   const elapsedRaw = formData.get("elapsedSeconds");
   const photo = formData.get("photo");
+
+  const reporter = await getReporter();
+  if (!reporter) {
+    return { status: "error", message: "กรุณาเลือกประเภทผู้ใช้ก่อนแจ้งซ่อม" };
+  }
 
   if (typeof buildingId !== "string" || !buildingId) {
     return { status: "error", message: "กรุณาเลือกอาคาร" };
@@ -96,10 +102,14 @@ export async function submitReport(
         ? assignedRaw
         : null,
     photo_path: photoPath,
+    reporter_type: reporter.type,
+    reporter_code: reporter.type === "internal" ? reporter.code : null,
     reporter_name:
-      typeof reporterName === "string" && reporterName.trim()
-        ? reporterName.trim()
-        : null,
+      reporter.type === "internal"
+        ? reporter.name
+        : typeof reporterName === "string" && reporterName.trim()
+          ? reporterName.trim().slice(0, 100)
+          : null,
     contact_phone:
       typeof contactPhone === "string" && contactPhone.trim()
         ? contactPhone.trim()
