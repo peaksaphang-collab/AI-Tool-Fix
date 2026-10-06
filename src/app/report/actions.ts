@@ -45,7 +45,7 @@ export async function submitReport(
   }
 
   if (typeof buildingId !== "string" || !buildingId) {
-    return { status: "error", message: "กรุณาเลือกอาคาร" };
+    return { status: "error", message: "กรุณาเลือกหน่วยงาน" };
   }
   const locationDetail =
     typeof locationRaw === "string" ? locationRaw.trim().slice(0, 200) : "";
@@ -96,8 +96,8 @@ export async function submitReport(
     building_id: buildingId,
     room_id: null,
     location_detail: locationDetail,
-    // ผู้แจ้งเลือกได้ว่าจะให้ใครรับเรื่อง ฐานข้อมูลตรวจว่าเป็นเจ้าหน้าที่จริง (FK)
-    assigned_to:
+    // ผู้แจ้งเลือกผู้รับผิดชอบจากรายชื่อได้ ฐานข้อมูลตรวจว่ามีชื่อนี้จริง (FK)
+    technician_id:
       typeof assignedRaw === "string" && /^[0-9a-f-]{36}$/i.test(assignedRaw)
         ? assignedRaw
         : null,

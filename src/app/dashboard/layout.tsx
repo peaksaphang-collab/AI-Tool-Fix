@@ -42,7 +42,7 @@ export default function DashboardLayout({
             href="/dashboard/places"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            <MapPin /> อาคาร/ห้อง
+            <MapPin /> หน่วยงาน
           </Link>
           <Link
             href="/report"

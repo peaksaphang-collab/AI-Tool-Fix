@@ -35,9 +35,9 @@ export interface Database {
   public: {
     Tables: {
       buildings: {
-        Row: { id: string; name: string; created_at: string };
-        Insert: { id?: string; name: string; created_at?: string };
-        Update: { id?: string; name?: string; created_at?: string };
+        Row: { id: string; name: string; active: boolean; created_at: string };
+        Insert: { id?: string; name: string; active?: boolean; created_at?: string };
+        Update: { id?: string; name?: string; active?: boolean; created_at?: string };
         Relationships: [];
       };
       rooms: {
@@ -78,6 +78,12 @@ export interface Database {
         Update: { id?: string; full_name?: string; created_at?: string };
         Relationships: [];
       };
+      technicians: {
+        Row: { id: string; name: string; sort_order: number; created_at: string };
+        Insert: { id?: string; name: string; sort_order?: number; created_at?: string };
+        Update: { id?: string; name?: string; sort_order?: number; created_at?: string };
+        Relationships: [];
+      };
       service_types: {
         Row: { id: number; name: string };
         Insert: { id: number; name: string };
@@ -101,6 +107,7 @@ export interface Database {
           service_type_id: number | null;
           contact_phone: string | null;
           assigned_to: string | null;
+          technician_id: string | null;
           urgency: Urgency | null;
           ai_suggested_service_type_id: number | null;
           ai_suggested_urgency: Urgency | null;
@@ -133,6 +140,7 @@ export interface Database {
           service_type_id?: number | null;
           contact_phone?: string | null;
           assigned_to?: string | null;
+          technician_id?: string | null;
           urgency?: Urgency | null;
           ai_suggested_service_type_id?: number | null;
           ai_suggested_urgency?: Urgency | null;
@@ -165,6 +173,7 @@ export interface Database {
           service_type_id?: number | null;
           contact_phone?: string | null;
           assigned_to?: string | null;
+          technician_id?: string | null;
           urgency?: Urgency | null;
           ai_suggested_service_type_id?: number | null;
           ai_suggested_urgency?: Urgency | null;

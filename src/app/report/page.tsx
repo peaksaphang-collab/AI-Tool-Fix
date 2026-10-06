@@ -17,9 +17,9 @@ export default async function ReportPage() {
 
   const [{ data: buildings }, { data: serviceTypes }, { data: staff }] =
     await Promise.all([
-      supabase.from("buildings").select("*").order("name"),
+      supabase.from("buildings").select("*").eq("active", true).order("name"),
       supabase.from("service_types").select("*").order("id"),
-      supabase.rpc("public_staff_names"),
+      supabase.from("technicians").select("id, name").order("sort_order").order("name"),
     ]);
 
   // "อื่น ๆ" ไว้ท้ายรายการเสมอ
@@ -34,7 +34,7 @@ export default async function ReportPage() {
         <div>
           <h1 className="text-2xl font-semibold">แจ้งซ่อม</h1>
           <p className="text-sm text-muted-foreground">
-            ถ่ายรูปสิ่งที่เสีย เลือกอาคาร พิมพ์ห้องหรือจุดที่เสีย ระบบจะวิเคราะห์ให้อัตโนมัติ
+            ถ่ายรูปสิ่งที่เสีย เลือกหน่วยงาน พิมพ์ห้องหรือจุดที่เสีย ระบบจะวิเคราะห์ให้อัตโนมัติ
           </p>
         </div>
         <div className="glass flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm">
@@ -61,7 +61,7 @@ export default async function ReportPage() {
           reporterType={reporter.type}
           buildings={sortedBuildings}
           serviceTypes={serviceTypes ?? []}
-          staff={staff ?? []}
+          staff={(staff ?? []).map((t) => ({ id: t.id, full_name: t.name }))}
         />
       </main>
     </>

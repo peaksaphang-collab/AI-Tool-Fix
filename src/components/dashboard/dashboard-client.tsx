@@ -12,7 +12,8 @@ type Report = Database["public"]["Tables"]["reports"]["Row"];
 type Building = Database["public"]["Tables"]["buildings"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
-type Staff = Database["public"]["Tables"]["staff"]["Row"];
+// ตัวเลือกผู้รับผิดชอบงาน (รายชื่อช่างจากตาราง technicians)
+type Staff = { id: string; full_name: string };
 
 export interface ReportWithLocation extends Report {
   buildingName: string;
@@ -71,14 +72,14 @@ export function DashboardClient({
     () =>
       (report: Report): ReportWithLocation => ({
         ...report,
-        buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบอาคาร",
+        buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบหน่วยงาน",
         roomName: locationOf(report, roomById).name,
         roomFloor: locationOf(report, roomById).floor,
         serviceTypeName: report.service_type_id
           ? serviceTypeById.get(report.service_type_id) ?? null
           : null,
-        assignedName: report.assigned_to
-          ? staffById.get(report.assigned_to) ?? null
+        assignedName: report.technician_id
+          ? staffById.get(report.technician_id) ?? null
           : null,
       }),
     [buildingNameById, roomById, serviceTypeById, staffById]
@@ -135,7 +136,7 @@ export function DashboardClient({
         report.id === id
           ? {
               ...report,
-              assigned_to: staffId,
+              technician_id: staffId,
               assignedName: staffId ? staffById.get(staffId) ?? null : null,
             }
           : report
@@ -185,7 +186,7 @@ export function DashboardClient({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="ค้นหา อาคาร / ห้อง / อุปกรณ์ / ผู้แจ้ง / เบอร์โทร"
+          placeholder="ค้นหา หน่วยงาน / ห้อง / อุปกรณ์ / ผู้แจ้ง / เบอร์โทร"
           aria-label="ค้นหารายการแจ้งซ่อม"
           className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:max-w-md"
         />

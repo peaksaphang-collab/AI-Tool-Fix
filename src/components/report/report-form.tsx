@@ -191,7 +191,7 @@ export function ReportForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="buildingId">อาคาร</Label>
+        <Label htmlFor="buildingId">หน่วยงาน</Label>
         <Select
           name="buildingId"
           items={buildingItems}
@@ -200,7 +200,7 @@ export function ReportForm({
           required
         >
           <SelectTrigger id="buildingId" className="w-full">
-            <SelectValue placeholder="เลือกอาคาร" />
+            <SelectValue placeholder="เลือกหน่วยงาน" />
           </SelectTrigger>
           <SelectContent>
             {buildings.map((building) => (
@@ -258,11 +258,11 @@ export function ReportForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="assignedTo">ผู้รับผิดชอบงาน (ไม่บังคับ)</Label>
+          <Label htmlFor="assignedTo">ผู้รับผิดชอบ (ไม่บังคับ)</Label>
           <Select name="assignedTo" items={staffItems} disabled={staff.length === 0}>
             <SelectTrigger id="assignedTo" className="w-full">
               <SelectValue
-                placeholder={staff.length ? "ให้เจ้าหน้าที่มอบหมาย" : "ยังไม่มีรายชื่อ"}
+                placeholder={staff.length ? "เลือกผู้รับผิดชอบ" : "ยังไม่มีรายชื่อ"}
               />
             </SelectTrigger>
             <SelectContent>

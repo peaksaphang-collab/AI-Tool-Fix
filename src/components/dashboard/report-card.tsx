@@ -39,7 +39,8 @@ import type { ReportWithLocation } from "@/components/dashboard/dashboard-client
 import type { Database, Urgency } from "@/lib/supabase/types";
 import { SLA_LABEL, slaInfo } from "@/lib/sla";
 
-type Staff = Database["public"]["Tables"]["staff"]["Row"];
+// ตัวเลือกผู้รับผิดชอบงาน (รายชื่อจากตาราง technicians)
+type Staff = { id: string; full_name: string };
 type ServiceType = Database["public"]["Tables"]["service_types"]["Row"];
 
 const STATUS_LABEL: Record<ReportWithLocation["status"], string> = {
@@ -280,7 +281,7 @@ export function ReportCard({
           <div className="ml-auto flex items-center gap-1">
             <UserRound className="size-3.5 text-muted-foreground" />
             <Select
-              value={report.assigned_to ?? "none"}
+              value={report.technician_id ?? "none"}
               onValueChange={(value) =>
                 onAssign(report.id, value === "none" || !value ? null : value)
               }

@@ -35,13 +35,14 @@ export async function exportReportsCsv(): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "กรุณาเข้าสู่ระบบ" };
 
-  const [{ data: reports, error }, { data: buildings }, { data: rooms }, { data: types }, { data: staff }] =
+  const [{ data: reports, error }, { data: buildings }, { data: rooms }, { data: types }, { data: staff }, { data: technicians }] =
     await Promise.all([
       supabase.from("reports").select("*").order("created_at", { ascending: false }),
       supabase.from("buildings").select("id,name"),
       supabase.from("rooms").select("id,name,floor"),
       supabase.from("service_types").select("id,name"),
       supabase.from("staff").select("id,full_name"),
+      supabase.from("technicians").select("id,name"),
     ]);
 
   if (error) return { ok: false, message: error.message };
@@ -50,12 +51,13 @@ export async function exportReportsCsv(): Promise<
   const r = new Map((rooms ?? []).map((x) => [x.id, x.floor ? `${x.name} (ชั้น ${x.floor})` : x.name]));
   const t = new Map((types ?? []).map((x) => [x.id, x.name]));
   const s = new Map((staff ?? []).map((x) => [x.id, x.full_name]));
+  const tech = new Map((technicians ?? []).map((x) => [x.id, x.name]));
   const now = Date.now();
 
   const header = [
     "รหัสติดตาม",
     "วันที่แจ้ง",
-    "อาคาร",
+    "หน่วยงาน",
     "ห้อง",
     "ประเภทงาน",
     "อุปกรณ์",
@@ -97,7 +99,7 @@ export async function exportReportsCsv(): Promise<
       SLA_LABEL[x.urgency ?? "medium"],
       STATUS_TH[x.status] ?? x.status,
       sla.label,
-      x.assigned_to ? s.get(x.assigned_to) ?? "" : "",
+      (x.technician_id ? tech.get(x.technician_id) : null) ?? (x.assigned_to ? s.get(x.assigned_to) ?? "" : ""),
       x.reporter_name,
       x.reporter_type === "internal" ? "บุคลากรภายใน" : x.reporter_type === "external" ? "บุคคลภายนอก" : "",
       x.reporter_code,

@@ -22,32 +22,35 @@ export default async function DashboardPage() {
     { data: rooms },
     { data: serviceTypes },
     { data: staff },
+    { data: technicians },
   ] = await Promise.all([
     supabase.from("reports").select("*").order("created_at", { ascending: false }),
     supabase.from("buildings").select("*"),
     supabase.from("rooms").select("*"),
     supabase.from("service_types").select("*").order("id"),
     supabase.from("staff").select("*").order("full_name"),
+    supabase.from("technicians").select("id, name").order("sort_order").order("name"),
   ]);
 
   const buildingNameById = new Map((buildings ?? []).map((b) => [b.id, b.name]));
   const roomById = new Map((rooms ?? []).map((r) => [r.id, r]));
   const serviceTypeById = new Map((serviceTypes ?? []).map((t) => [t.id, t.name]));
   const staffById = new Map((staff ?? []).map((s) => [s.id, s.full_name]));
+  const technicianById = new Map((technicians ?? []).map((t) => [t.id, t.name]));
 
   const reportsWithLocation: ReportWithLocation[] = (reports ?? []).map((report) => {
     const room = locationOf(report, roomById);
     return {
       ...report,
-      buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบอาคาร",
+      buildingName: buildingNameById.get(report.building_id) ?? "ไม่ทราบหน่วยงาน",
       roomName: room.name,
       roomFloor: room.floor,
       serviceTypeName: report.service_type_id
         ? serviceTypeById.get(report.service_type_id) ?? null
         : null,
-      assignedName: report.assigned_to
-        ? staffById.get(report.assigned_to) ?? null
-        : null,
+      assignedName:
+        (report.technician_id ? technicianById.get(report.technician_id) : null) ??
+        (report.assigned_to ? staffById.get(report.assigned_to) ?? null : null),
     };
   });
 
@@ -59,7 +62,7 @@ export default async function DashboardPage() {
         buildings={buildings ?? []}
         rooms={rooms ?? []}
         serviceTypes={serviceTypes ?? []}
-        staff={staff ?? []}
+        staff={(technicians ?? []).map((t) => ({ id: t.id, full_name: t.name }))}
       />
     </main>
   );

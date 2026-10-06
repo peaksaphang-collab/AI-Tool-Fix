@@ -10,7 +10,12 @@ export interface PhotoAnalysis {
   urgency: Urgency | null;
 }
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Kie.ai ขายสิทธิ์เรียก Claude รุ่นเดียวกันผ่าน endpoint แบบเดียวกับ Anthropic
+// มีคีย์ Kie ใช้ Kie ไม่มีก็เรียก Anthropic ตรง
+const KIE_KEY = process.env.KIE_API_KEY;
+const client = KIE_KEY
+  ? new Anthropic({ apiKey: KIE_KEY, authToken: KIE_KEY, baseURL: "https://api.kie.ai/claude" })
+  : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const URGENCY_VALUES: Urgency[] = ["critical", "high", "medium", "low"];
 
@@ -57,8 +62,8 @@ export async function analyzePhoto(
   imageBase64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp"
 ): Promise<PhotoAnalysis | null> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("ANTHROPIC_API_KEY is not set; skipping photo analysis.");
+  if (!KIE_KEY && !process.env.ANTHROPIC_API_KEY) {
+    console.error("Neither KIE_API_KEY nor ANTHROPIC_API_KEY is set; skipping photo analysis.");
     return null;
   }
 
@@ -66,6 +71,8 @@ export async function analyzePhoto(
     const message = await client.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 512,
+      // Kie ส่งแบบ stream เป็นค่าเริ่มต้น ต้องขอคำตอบก้อนเดียวให้ชัด
+      stream: false,
       tools: [ANALYSIS_TOOL],
       tool_choice: { type: "tool", name: "report_equipment_issue" },
       messages: [

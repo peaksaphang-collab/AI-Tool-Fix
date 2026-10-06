@@ -26,7 +26,8 @@ export async function updateReportStatus(reportId: string, status: ReportStatus)
   revalidatePath("/dashboard");
 }
 
-export async function assignReport(reportId: string, staffId: string | null) {
+// ผู้รับผิดชอบงานมาจากรายชื่อช่าง (technicians) ไม่ต้องมีบัญชีเข้าระบบ
+export async function assignReport(reportId: string, technicianId: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,7 +39,7 @@ export async function assignReport(reportId: string, staffId: string | null) {
 
   const { error } = await supabase
     .from("reports")
-    .update({ assigned_to: staffId })
+    .update({ technician_id: technicianId })
     .eq("id", reportId);
 
   if (error) {

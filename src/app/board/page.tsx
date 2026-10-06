@@ -55,7 +55,7 @@ export default async function BoardPage() {
                 <tr className="border-b bg-primary/5 text-left text-xs text-muted-foreground">
                   <th className="px-3 py-2.5 font-medium">ลำดับ</th>
                   <th className="px-3 py-2.5 font-medium">วันที่แจ้ง</th>
-                  <th className="px-3 py-2.5 font-medium">อาคาร</th>
+                  <th className="px-3 py-2.5 font-medium">หน่วยงาน</th>
                   <th className="px-3 py-2.5 font-medium">ห้อง / จุดที่เสีย</th>
                   <th className="px-3 py-2.5 font-medium">ประเภทงาน</th>
                   <th className="px-3 py-2.5 font-medium">อุปกรณ์</th>

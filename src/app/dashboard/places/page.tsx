@@ -12,20 +12,20 @@ export default async function PlacesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: buildings }, { data: rooms }] = await Promise.all([
-    supabase.from("buildings").select("*").order("name"),
-    supabase.from("rooms").select("*").order("name"),
+  const [{ data: buildings }, { data: technicians }] = await Promise.all([
+    supabase.from("buildings").select("*").eq("active", true).order("name"),
+    supabase.from("technicians").select("id, name").order("sort_order").order("name"),
   ]);
 
   return (
     <main className="px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold">จัดการอาคารและห้อง</h1>
+        <h1 className="text-2xl font-semibold">จัดการหน่วยงานและผู้รับผิดชอบ</h1>
         <p className="text-sm text-muted-foreground">
-          เพิ่ม แก้ หรือลบอาคารและห้องได้เอง — รายการนี้คือตัวเลือกในหน้าแจ้งซ่อม
+          เพิ่มหรือลบได้เอง รายการนี้คือตัวเลือกในหน้าแจ้งซ่อม
         </p>
       </div>
-      <PlacesManager buildings={buildings ?? []} rooms={rooms ?? []} />
+      <PlacesManager buildings={buildings ?? []} technicians={technicians ?? []} />
     </main>
   );
 }
