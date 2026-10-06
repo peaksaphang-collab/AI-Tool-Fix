@@ -69,8 +69,26 @@ async function callKie(request: Anthropic.MessageCreateParamsNonStreaming): Prom
   });
   const text = await res.text();
   const content = contentOf(text);
-  if (!content) console.error("Kie returned no message:", res.status, text.slice(0, 400));
+  if (!content) {
+    console.error("Kie returned no message:", res.status, text.slice(0, 400));
+    if (text.includes('"code":401')) await logKeyCheck();
+  }
   return content;
+}
+
+// แยกให้ออกว่าคีย์ผิดทั้งบัญชี หรือคีย์ใช้ได้แต่เรียก Claude ไม่ได้ โดยไม่พิมพ์คีย์ลง log
+async function logKeyCheck() {
+  const key = KIE_KEY ?? "";
+  const credit = await fetch("https://api.kie.ai/api/v1/chat/credit", {
+    headers: { Authorization: `Bearer ${key}` },
+  })
+    .then((r) => r.text())
+    .catch((error) => String(error));
+  console.error("Kie key check:", {
+    length: key.length,
+    plain: /^[A-Za-z0-9_-]+$/.test(key),
+    credit: credit.slice(0, 200),
+  });
 }
 
 const URGENCY_VALUES: Urgency[] = ["critical", "high", "medium", "low"];
