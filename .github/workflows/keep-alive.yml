@@ -20,16 +20,19 @@ jobs:
       - name: Load the report page and confirm buildings come from the database
         run: |
           set -euo pipefail
-          url="https://ai-tool-fix-two.vercel.app/report"
+          url="https://ai-tool-fix.vercel.app/report"
+          # หน้าแจ้งซ่อมพาไปหน้าเข้าสู่ระบบก่อนถ้ายังไม่เลือกประเภทผู้ใช้ และไม่แตะฐานข้อมูลเลย
+          # จึงส่งคุกกี้ "บุคคลภายนอก" ไปด้วยเพื่อให้หน้าโหลดรายชื่อหน่วยงานจากฐานข้อมูลจริง
+          reporter='reporter=%7B%22type%22%3A%22external%22%7D'
 
           for attempt in 1 2 3; do
-            code=$(curl -sS -m 40 -o page.html -w "%{http_code}" "$url" || echo 000)
+            code=$(curl -sS -m 40 -b "$reporter" -o page.html -w "%{http_code}" "$url" || echo 000)
             echo "attempt $attempt: HTTP $code"
 
             # An empty database (paused or unreachable) still renders the page with
             # an empty buildings list, so a 200 alone proves nothing.
             if [ "$code" = "200" ] && grep -Eq 'buildings[^[]{1,4}\[\{' page.html; then
-              echo "database answered: buildings list is populated"
+              echo "database answered: unit list is populated"
               exit 0
             fi
             sleep 20
