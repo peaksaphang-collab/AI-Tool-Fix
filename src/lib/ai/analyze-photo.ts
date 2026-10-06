@@ -13,9 +13,62 @@ export interface PhotoAnalysis {
 // Kie.ai ขายสิทธิ์เรียก Claude รุ่นเดียวกันผ่าน endpoint แบบเดียวกับ Anthropic
 // มีคีย์ Kie ใช้ Kie ไม่มีก็เรียก Anthropic ตรง
 const KIE_KEY = process.env.KIE_API_KEY;
-const client = KIE_KEY
-  ? new Anthropic({ apiKey: KIE_KEY, authToken: KIE_KEY, baseURL: "https://api.kie.ai/claude" })
-  : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const KIE_URL = "https://api.kie.ai/claude/v1/messages";
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+type Block = { type?: string; id?: string; name?: string; input?: unknown; text?: string };
+
+// Kie ตอบด้วย HTTP 200 แม้เป็นข้อผิดพลาด และอาจห่อข้อความไว้ใน { code, msg, data }
+// หรือส่งเป็น stream แม้ขอ stream: false จึงอ่านเองทุกแบบ แล้ว log เหตุผลเมื่อไม่มีคำตอบ
+function contentOf(text: string): Block[] | null {
+  try {
+    const json = JSON.parse(text);
+    if (Array.isArray(json?.content)) return json.content;
+    if (Array.isArray(json?.data?.content)) return json.data.content;
+    return null;
+  } catch {
+    // ไม่ใช่ JSON ก้อนเดียว ลองอ่านแบบ server-sent events
+  }
+  const blocks: (Block & { partial?: string })[] = [];
+  for (const line of text.split("\n")) {
+    if (!line.startsWith("data:")) continue;
+    let event;
+    try {
+      event = JSON.parse(line.slice(5).trim());
+    } catch {
+      continue;
+    }
+    if (event.type === "content_block_start") {
+      blocks[event.index] = { ...event.content_block, partial: "" };
+    } else if (event.type === "content_block_delta" && blocks[event.index]) {
+      if (event.delta?.type === "input_json_delta") blocks[event.index].partial += event.delta.partial_json;
+      if (event.delta?.type === "text_delta") {
+        blocks[event.index].text = (blocks[event.index].text ?? "") + event.delta.text;
+      }
+    }
+  }
+  const content = blocks.filter(Boolean).map(({ partial, ...block }) =>
+    block.type === "tool_use" && partial ? { ...block, input: JSON.parse(partial) } : block
+  );
+  return content.length ? content : null;
+}
+
+async function callKie(request: Anthropic.MessageCreateParamsNonStreaming): Promise<Block[] | null> {
+  const res = await fetch(KIE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${KIE_KEY}`,
+      "x-api-key": KIE_KEY ?? "",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({ ...request, stream: false }),
+  });
+  const text = await res.text();
+  const content = contentOf(text);
+  if (!content) console.error("Kie returned no message:", res.status, text.slice(0, 400));
+  return content;
+}
 
 const URGENCY_VALUES: Urgency[] = ["critical", "high", "medium", "low"];
 
@@ -68,11 +121,9 @@ export async function analyzePhoto(
   }
 
   try {
-    const message = await client.messages.create({
+    const request: Anthropic.MessageCreateParamsNonStreaming = {
       model: "claude-sonnet-4-5",
       max_tokens: 512,
-      // Kie ส่งแบบ stream เป็นค่าเริ่มต้น ต้องขอคำตอบก้อนเดียวให้ชัด
-      stream: false,
       tools: [ANALYSIS_TOOL],
       tool_choice: { type: "tool", name: "report_equipment_issue" },
       messages: [
@@ -90,11 +141,12 @@ export async function analyzePhoto(
           ],
         },
       ],
-    });
+    };
 
-    const toolUse = message.content.find(
-      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
-    );
+    const content: Block[] | null = KIE_KEY
+      ? await callKie(request)
+      : (await client.messages.create(request)).content;
+    const toolUse = content?.find((block) => block.type === "tool_use");
     if (!toolUse) return null;
 
     const input = toolUse.input as Partial<PhotoAnalysis>;
