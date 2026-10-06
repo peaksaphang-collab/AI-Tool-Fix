@@ -12,8 +12,11 @@ export interface PhotoAnalysis {
 
 // Kie.ai ขายสิทธิ์เรียก Claude รุ่นเดียวกันผ่าน endpoint แบบเดียวกับ Anthropic
 // มีคีย์ Kie ใช้ Kie ไม่มีก็เรียก Anthropic ตรง
-// ตัดช่องว่าง/ขึ้นบรรทัดที่ติดมาตอนวางคีย์ในหน้าตั้งค่า
-const KIE_KEY = process.env.KIE_API_KEY?.trim();
+// ตัดสิ่งที่มักติดมาตอนวางคีย์ในหน้าตั้งค่า: ช่องว่าง ขึ้นบรรทัด คำว่า Bearer และเครื่องหมายคำพูด
+const KIE_KEY = process.env.KIE_API_KEY?.trim()
+  .replace(/^bearer\s+/i, "")
+  .replace(/^["']+|["']+$/g, "")
+  .trim();
 const KIE_URL = "https://api.kie.ai/claude/v1/messages";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
