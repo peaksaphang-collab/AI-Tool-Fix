@@ -100,8 +100,10 @@ const URGENCY_VALUES: Urgency[] = ["critical", "high", "medium", "low"];
 const ANALYSIS_TOOL: Anthropic.Tool = {
   name: "report_equipment_issue",
   description: "Report what equipment is shown and what looks broken about it.",
+  strict: true,
   input_schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       equipmentType: {
         type: "string",
@@ -146,11 +148,14 @@ export async function analyzePhoto(
   }
 
   try {
+    // claude-sonnet-4-5 ถูกปลดแล้ว (404) และรุ่นปัจจุบันไม่รับ tool_choice แบบบังคับ
+    // จึงใช้ auto + strict แล้วสั่งในข้อความให้เรียก tool งานจัดหมวดใช้ effort ต่ำพอ
     const request: Anthropic.MessageCreateParamsNonStreaming = {
-      model: "claude-sonnet-4-5",
-      max_tokens: 512,
+      model: "claude-sonnet-5-5",
+      max_tokens: 1024,
+      output_config: { effort: "low" },
       tools: [ANALYSIS_TOOL],
-      tool_choice: { type: "tool", name: "report_equipment_issue" },
+      tool_choice: { type: "auto" },
       messages: [
         {
           role: "user",
@@ -161,7 +166,7 @@ export async function analyzePhoto(
             },
             {
               type: "text",
-              text: "นี่คือรูปที่ผู้ใช้ถ่ายเพื่อแจ้งซ่อม วิเคราะห์ว่าอุปกรณ์อะไร เสียตรงไหน จัดหมวดประเภทงานซ่อม และประเมินความเร่งด่วน",
+              text: "นี่คือรูปที่ผู้ใช้ถ่ายเพื่อแจ้งซ่อม วิเคราะห์ว่าอุปกรณ์อะไร เสียตรงไหน จัดหมวดประเภทงานซ่อม และประเมินความเร่งด่วน แล้วส่งผลผ่าน report_equipment_issue เสมอ",
             },
           ],
         },
