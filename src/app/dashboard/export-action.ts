@@ -89,7 +89,7 @@ export async function exportReportsCsv(): Promise<
         : "";
     return [
       x.tracking_code,
-      new Date(x.created_at).toLocaleString("th-TH"),
+      new Date(x.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }),
       b.get(x.building_id) ?? "",
       x.location_detail?.trim() || (x.room_id ? r.get(x.room_id) ?? "" : ""),
       x.service_type_id ? t.get(x.service_type_id) ?? "" : "",
@@ -104,7 +104,7 @@ export async function exportReportsCsv(): Promise<
       x.reporter_type === "internal" ? "บุคลากรภายใน" : x.reporter_type === "external" ? "บุคคลภายนอก" : "",
       x.reporter_code,
       x.contact_phone,
-      x.resolved_at ? new Date(x.resolved_at).toLocaleString("th-TH") : "",
+      x.resolved_at ? new Date(x.resolved_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }) : "",
       hours,
       x.ai_suggested_service_type_id ? t.get(x.ai_suggested_service_type_id) ?? "" : "",
       x.ai_suggested_urgency ? URGENCY_TH[x.ai_suggested_urgency] : "",
@@ -118,6 +118,6 @@ export async function exportReportsCsv(): Promise<
   });
 
   const content = "﻿" + [header.map(csvCell).join(","), ...rows].join("\r\n");
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
   return { ok: true, filename: `repair-reports-${stamp}.csv`, content };
 }

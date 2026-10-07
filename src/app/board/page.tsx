@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SetupRequired, isSupabaseConfigured } from "@/app/setup-required";
@@ -18,6 +16,17 @@ const STATUS: Record<ReportStatus, { label: string; className: string }> = {
 };
 
 const REFRESH_SECONDS = 30;
+
+// หน้านี้ render บนเซิร์ฟเวอร์ Vercel ซึ่งใช้เวลา UTC ต้องระบุเขตเวลาไทยเอง ไม่งั้นเวลาช้าไป 7 ชั่วโมง
+const REPORTED_AT = new Intl.DateTimeFormat("th-TH-u-ca-gregory", {
+  timeZone: "Asia/Bangkok",
+  day: "numeric",
+  month: "short",
+  year: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
 
 export default async function BoardPage() {
   if (!isSupabaseConfigured()) return <SetupRequired />;
@@ -68,7 +77,7 @@ export default async function BoardPage() {
                   <tr key={`${row.created_at}-${i}`} className="border-b last:border-0 align-top">
                     <td className="px-3 py-2.5 tabular-nums text-muted-foreground">{i + 1}</td>
                     <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
-                      {format(new Date(row.created_at), "d MMM yy HH:mm", { locale: th })}
+                      {REPORTED_AT.format(new Date(row.created_at))}
                     </td>
                     <td className="px-3 py-2.5">{row.building_name}</td>
                     <td className="px-3 py-2.5">{row.location ?? "-"}</td>
