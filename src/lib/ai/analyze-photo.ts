@@ -13,12 +13,15 @@ export interface PhotoAnalysis {
 // Kie.ai ขายสิทธิ์เรียก Claude รุ่นเดียวกันผ่าน endpoint แบบเดียวกับ Anthropic
 // มีคีย์ Kie ใช้ Kie ไม่มีก็เรียก Anthropic ตรง
 // ตัดสิ่งที่มักติดมาตอนวางคีย์ในหน้าตั้งค่า: ช่องว่าง ขึ้นบรรทัด คำว่า Bearer และเครื่องหมายคำพูด
-const KIE_KEY = process.env.KIE_API_KEY?.trim()
+const PASTED_KEY = process.env.KIE_API_KEY?.trim()
   .replace(/^bearer\s+/i, "")
   .replace(/^["']+|["']+$/g, "")
   .trim();
+// คีย์ที่ขึ้นต้น sk-ant- เป็นคีย์ของ Anthropic เอง แม้ใส่ไว้ในช่อง KIE_API_KEY ก็เรียก Anthropic ตรง
+const KIE_KEY = PASTED_KEY?.startsWith("sk-ant-") ? undefined : PASTED_KEY;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY ?? (KIE_KEY ? undefined : PASTED_KEY);
 const KIE_URL = "https://api.kie.ai/claude/v1/messages";
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: ANTHROPIC_KEY });
 
 type Block = { type?: string; id?: string; name?: string; input?: unknown; text?: string };
 
@@ -87,6 +90,7 @@ async function logKeyCheck() {
   console.error("Kie key check:", {
     length: key.length,
     plain: /^[A-Za-z0-9_-]+$/.test(key),
+    kind: /^[a-f0-9]{32}$/i.test(key) ? "kie" : (key.match(/^sk-[a-z]+/i)?.[0] ?? "unknown"),
     credit: credit.slice(0, 200),
   });
 }
@@ -136,7 +140,7 @@ export async function analyzePhoto(
   imageBase64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp"
 ): Promise<PhotoAnalysis | null> {
-  if (!KIE_KEY && !process.env.ANTHROPIC_API_KEY) {
+  if (!KIE_KEY && !ANTHROPIC_KEY) {
     console.error("Neither KIE_API_KEY nor ANTHROPIC_API_KEY is set; skipping photo analysis.");
     return null;
   }
