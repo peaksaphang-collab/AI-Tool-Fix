@@ -167,7 +167,6 @@ export function ReportForm({
           name="photo"
           type="file"
           accept="image/*"
-          capture="environment"
           required
           className="sr-only"
           onChange={async (event) => {
